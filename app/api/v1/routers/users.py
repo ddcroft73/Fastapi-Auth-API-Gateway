@@ -10,6 +10,9 @@ router = APIRouter()
 def root():
     return {'result': "Root Endpoint"}
 
+@router.post("/")#, response_model=schemas.User)
+def create_user():
+    pass
 
 @router.post('/get-users/', tags=["Users"])
 def get_all_users(skip: int = 0, limit: int = 100): #, db: Session = Depends(get_db)):
@@ -17,7 +20,7 @@ def get_all_users(skip: int = 0, limit: int = 100): #, db: Session = Depends(get
 
 
 @router.post('/get-user/{user_id}', tags=["Users"])
-def get_all_users():
+def get_user():
     return {'result': "get-users"}
 
 
