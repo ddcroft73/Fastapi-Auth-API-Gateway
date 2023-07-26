@@ -1,0 +1,5 @@
+.env
+snippets.txt
+logs/*.log
+.vscode
+tests/code_test.py
