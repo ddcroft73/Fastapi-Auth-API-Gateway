@@ -1,0 +1,9 @@
+fastapi==0.96.0
+requests==2.31.0
+PyJWT==2.7.0
+python-dotenv==1.0.0
+uvicorn==0.22.0
+python-multipart==0.0.6
+celery==5.2.7
+redis==4.5.4
+flower==1.2.0
