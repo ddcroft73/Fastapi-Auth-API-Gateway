@@ -23,6 +23,6 @@ for users to register, login, password recovery, etc. Once I get that done. I'll
 As for now this readme is going to serve as my scratch pad. I'm going to hash it all out here as I do it. So here are my goals:
 - Build the project structure... DONE
   - I'll be using the same setup as I did with my email service. That is using containers and docker compose.
-- Build a basic fastapi app with endpoints intact,  but none functional... WORKING
-- Add celery for tasks (Beat will come later) Currently working on the routers
+- Build a basic fastapi app with endpoints intact,  but none functional... DONE
+- Add celery for tasks (Beat will come later)... WORKING
 
