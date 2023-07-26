@@ -1,7 +1,7 @@
 from fastapi import FastAPI
-from core import settings
-from app.api.v1.routers.users import router as users_router
-from app.api.v1.routers.auth import router as auth_router
+from api.v1.routers.users import router as users_router
+from api.v1.routers.auth import router as auth_router
+from core.config import settings
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
