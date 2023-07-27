@@ -2,4 +2,4 @@
 snippets.txt
 logs/*.log
 .vscode
-tests/code_test.py
+app/tests/code_test.py

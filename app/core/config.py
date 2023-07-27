@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     #SQLALCHEMY_DATABASE_URI: str = "postgresql://localhost:5432/fastapi_db"
 
     class Config:
-        env_file = ".env"
+        env_file = "../.env"
 
 
 settings = Settings()
