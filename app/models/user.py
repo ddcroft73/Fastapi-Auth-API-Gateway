@@ -1,10 +1,8 @@
-from sqlalchemy import Column, Integer, String, Float
-
+from sqlalchemy import Column, Integer, String
 from app.database.base_class import Base
-from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, Integer, String
-from sqlalchemy.orm import relationship
+#from sqlalchemy.orm import relationship
 
 from app.database.base_class import Base
 
@@ -16,4 +14,4 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean(), default=True)
     is_superuser = Column(Boolean(), default=False)
-    items = relationship("Item", back_populates="owner")
+    #items = relationship("Item", back_populates="owner")
