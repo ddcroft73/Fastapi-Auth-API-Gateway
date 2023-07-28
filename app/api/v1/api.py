@@ -7,5 +7,14 @@ from app.core.config import settings
 
 api_router = APIRouter()
 
-api_router.include_router(users_router, prefix='/users', tags=["Users"])
-api_router.include_router(auth_router, prefix='/auth', tags=["Login"])
+api_router.include_router(
+    users_router, 
+    prefix='/users', 
+    tags=["Users"]
+)
+
+api_router.include_router(
+    auth_router, 
+    prefix='/auth', 
+    tags=["Login"]
+)
