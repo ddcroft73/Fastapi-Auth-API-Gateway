@@ -5,9 +5,11 @@ from sqlalchemy import pool
 
 from alembic import context
 
-
 from app.database.base import Base  # noqa
 from app.core.config import settings
+
+from dotenv import load_dotenv
+load_dotenv()
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -32,11 +34,11 @@ target_metadata = Base.metadata
 
 
 def get_url():
-    #user = os.getenv("POSTGRES_USER", "postgres")
-    #password = os.getenv("POSTGRES_PASSWORD", "")
-    #server = os.getenv("POSTGRES_SERVER", "db")
-    #db = os.getenv("POSTGRES_DB", "app")
-    return settings.SQLALCHEMY_DATABASE_URI#f"postgresql://{user}:{password}@{server}/{db}"
+    user = os.getenv("POSTGRES_USER", "postgres")
+    password = os.getenv("POSTGRES_PASSWORD", "")
+    server = os.getenv("POSTGRES_SERVER", "db")
+    db = os.getenv("POSTGRES_DB", "app")
+    return f"postgresql://{user}:{password}@{server}/{db}"
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -75,7 +77,7 @@ def run_migrations_online() -> None:
     configuration = config.get_section(config.config_ini_section)
     configuration["sqlalchemy.url"] = settings.SQLALCHEMY_DATABASE_URI
     connectable = engine_from_config(configuration, prefix="sqlalchemy.", poolclass=pool.NullPool)
-    
+
     with connectable.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
 

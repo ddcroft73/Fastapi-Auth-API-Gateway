@@ -3,7 +3,9 @@ from pydantic import BaseSettings
 from typing import Any, Dict, List, Optional, Union
 
 from pydantic import AnyHttpUrl, BaseSettings, EmailStr, HttpUrl, PostgresDsn, validator
+from dotenv import load_dotenv
 
+load_dotenv()
 
 class Settings(BaseSettings):
 
@@ -31,7 +33,7 @@ class Settings(BaseSettings):
         if len(v) == 0:
             return None
         return v
-
+'''
     POSTGRES_SERVER: str
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
@@ -49,11 +51,11 @@ class Settings(BaseSettings):
             host=values.get("POSTGRES_SERVER"),
             path=f"/{values.get('POSTGRES_DB') or ''}",
         )
-'''
-    SQLALCHEMY_DATABASE_URI: str = "postgresql://localhost:5432/dms_User_db"
 
     class Config:
         env_file = "../.env"
 
 
 settings = Settings()
+
+print(settings.SQLALCHEMY_DATABASE_URI)

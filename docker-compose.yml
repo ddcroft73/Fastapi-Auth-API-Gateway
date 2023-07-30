@@ -10,4 +10,18 @@ services:
       command: uvicorn app.main:app --host 0.0.0.0 --reload
       volumes:
         - .:/app
-      
+
+  db:
+    image:  postgres:15
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: optimo
+      POSTGRES_DB: app
+      POSTGRES_USER: deadMANSSwitch
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
