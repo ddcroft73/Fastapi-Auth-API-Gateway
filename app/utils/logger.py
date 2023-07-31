@@ -3,26 +3,26 @@ from datetime import datetime, time, timedelta
 import re
 from os.path import join as os_join
 from .file_handler import filesys
-from config.settings import settings
-
+from app.core import settings
+"""
 #
 # "EZ Logger class.
-#
-#  It's like Python Logger(not as robust), but it works without having to be perfect. If I ask it to log something it does it
-#  and I don't have to dig through docs to figure out why my INFO logger is working.. somewhat, but my ERROR
-#  logger is not. Or Why my INFO lofs are now going to the Celery log this time, and the screen the next.
-#
-#   I am not going to write this with different log levels(sortof).. basically, If it says log it, log it.
-#  The type of message will be determined by the method called and where it is placed in the code.
+# 
+This is not like the Python logger. It Allows me to save messsages defined by a certain level, but it doesnt have to
+have a level set to log anything. Its just a way to give the backend an inerface and allows me to log everything that
+happens, that i want to log. The logs are kept in a folde you choose and they will auto archive when a certainsize is realized
+THis way i can go back if there is a problem and look throigh all the back logs that are kept neat and in managable
+"piles'
 
+it lets me log 
+ERRORS
+DEBUG
+INFO
+WARNNG
 
-"""
-# User will config the logger on instantiation, 
-# If none of these args are used, Then User will get a logger that sends all log entries
-# to a default log file in the projects root directory under thedirectory 'logs'. and whenever
-# the size reaches 1000lines it will be archived.
-# Any filename not specified will go into the default log file.
-
+All you have to do is call the type log you weant to save. logger.info("Message") and it goes with all the info logs
+Same with the other types. You dont have to worry about much configuring. If you dont select names for the log files
+It will add them all to a defalt log file.  
 """
 
 class ScreenPrinter:
