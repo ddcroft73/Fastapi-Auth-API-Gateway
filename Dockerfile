@@ -1,4 +1,5 @@
-FROM python:3.11.2-slim-buster
+FROM python:3.11
+#.2-slim-buster
 
 LABEL maintainer="DDCroft <ddc.dev.python@gmail.com>"
 LABEL version="1.0"
@@ -9,6 +10,7 @@ WORKDIR /app
 # set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
+ENV PYTHONPATH .
 
 # install dependencies
 RUN pip install --upgrade pip
