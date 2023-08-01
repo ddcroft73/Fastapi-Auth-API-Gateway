@@ -441,14 +441,13 @@ class EZLogger:
                 "Check path and spelling."
             )
 
-'''
+
 logzz = EZLogger(
     info_filename="INFO_log.log",
-    debug_filename="DEbUG_log.log",
+    debug_filename=None,
     error_filename="ERROR_logzz.log",
     warning_filename=None,
     output_destination=EZLogger.FILE,
     archive_log_files=True,
     log_file_max_size=1000,
 )
-'''

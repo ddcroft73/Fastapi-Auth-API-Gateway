@@ -1,9 +1,4 @@
-FROM python:3.11
-#.2-slim-buster
-
-LABEL maintainer="DDCroft <ddc.dev.python@gmail.com>"
-LABEL version="1.0"
-LABEL description="dmsPlus Auth Gateway"
+FROM python:3.11.2-slim-buster
 
 WORKDIR /app
 
@@ -18,4 +13,6 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 COPY . .
+
+RUN chmod +x first_start.sh
 

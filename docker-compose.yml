@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
 
-  fastapi:
+  web:
     build: .
     ports:
       - 8015:8000
@@ -30,7 +30,7 @@ services:
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - TZ=US/Eastern
     depends_on:
-      - fastapi
+      - web
       - redis
 
   db:

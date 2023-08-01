@@ -6,9 +6,9 @@ from sqlalchemy import pool
 from alembic import context
 
 from app.database.base import Base  # noqa
-from app.core.config import settings
-
+from app.utils.logger import logzz
 from dotenv import load_dotenv
+
 load_dotenv()
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -60,8 +60,13 @@ def run_migrations_offline() -> None:
     """
     url = get_url()
 
-    context.configure(url=url, target_metadata=target_metadata, literal_binds=True,
-                      dialect_opts={"paramstyle": "named"}, compare_type=True)
+    context.configure(
+        url=url, 
+        target_metadata=target_metadata, 
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"}, 
+        compare_type=True
+    )
 
     with context.begin_transaction():
         context.run_migrations()
@@ -74,25 +79,24 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = settings.SQLALCHEMY_DATABASE_URI
-    connectable = engine_from_config(configuration, prefix="sqlalchemy.", poolclass=pool.NullPool)
+    configuration["sqlalchemy.url"] = get_url()
+    connectable = engine_from_config(
+        configuration, 
+        prefix="sqlalchemy.", 
+        poolclass=pool.NullPool,
+    )
+    try:
+        with connectable.connect() as connection:
+            context.configure(
+                connection=connection, target_metadata=target_metadata, compare_type=True
+            )
 
-    with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
-
-        with context.begin_transaction():
-            context.run_migrations()
-
-    '''
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
-
-        with context.begin_transaction():
-            context.run_migrations()
-'''
+            with context.begin_transaction():
+                context.run_migrations()
+    except Exception as e:
+        logzz.error(f"Attempting migration: {str(e)}")
 
 if context.is_offline_mode():
     run_migrations_offline()
