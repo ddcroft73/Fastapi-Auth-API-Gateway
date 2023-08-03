@@ -2,6 +2,7 @@ from typing import Any, List
 
 from fastapi import APIRouter, Body, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse 
 from pydantic.networks import EmailStr
 from sqlalchemy.orm import Session
 
@@ -10,8 +11,10 @@ from app.api import deps
 from app.core.config import settings
 from app.mail_utils import send_new_account_email
 
+
 router = APIRouter()
 
+# api/v1/
 
 @router.get("/", response_model=List[schemas.User])
 def read_users(
@@ -21,12 +24,14 @@ def read_users(
     current_user: models.User = Depends(deps.get_current_active_superuser),
 ) -> Any:
     """
-    Retrieve users.
+    Retrieve users: 
+    Pull out all users in the system and return.
     """
     users = crud.user.get_multi(db, skip=skip, limit=limit)
     return users
 
 
+# api/v1/
 @router.post("/", response_model=schemas.User)
 def create_user(
     *,
@@ -51,6 +56,7 @@ def create_user(
     return user
 
 
+# api/v1/me
 @router.put("/me", response_model=schemas.User)
 def update_user_me(
     *,
@@ -75,6 +81,7 @@ def update_user_me(
     return user
 
 
+# api/v1/me
 @router.get("/me", response_model=schemas.User)
 def read_user_me(
     db: Session = Depends(deps.get_db),
@@ -86,6 +93,7 @@ def read_user_me(
     return current_user
 
 
+# api/v1/open
 @router.post("/open", response_model=schemas.User)
 def create_user_open(
     *,
@@ -112,7 +120,7 @@ def create_user_open(
     user = crud.user.create(db, obj_in=user_in)
     return user
 
-
+#/api/v1/users/{user_id}
 @router.get("/{user_id}", response_model=schemas.User)
 def read_user_by_id(
     user_id: int,
@@ -131,7 +139,7 @@ def read_user_by_id(
         )
     return user
 
-
+#/api/v1/users/{user_id}
 @router.put("/{user_id}", response_model=schemas.User)
 def update_user(
     *,

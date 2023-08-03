@@ -15,8 +15,13 @@ class Settings(BaseSettings):
 
     CELERY_BROKER_URL: str ="redis://redis:6379/0"
     CELERY_RESULT_BACKEND: str ="redis://redis:6379/0"
+
     FIRST_SUPERUSER: EmailStr = os.getenv("FIRST_SUPERUSER")
     FIRST_SUPERUSER_PASSWORD: str = os.getenv("FIRST_SUPERUSER_PASSWORD")
+
+    LOG_DIRECTORY: str = "./logs" # Always put the log directory in the CWD.
+    LOG_ARCHIVE_DIRECTORY: str = f"{LOG_DIRECTORY}/log-archives"
+    DEFAULT_LOG_FILE: str = f"{LOG_DIRECTORY}/DEFAULT-app-logs.log"  # This where all log entries go If a destnation is not specified.
     
     '''
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = ['*']

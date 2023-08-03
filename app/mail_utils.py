@@ -9,8 +9,9 @@ from jose import jwt
 
 from app.core.config import settings
 
-
-# Keep these and make api calls to send the emails.
+# 
+# Connect with the Notifications API here
+#  
 
 def send_email(
     email_to: str,
