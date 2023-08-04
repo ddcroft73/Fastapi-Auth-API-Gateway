@@ -7,12 +7,10 @@ set -e
 
 cd "$(dirname "$0")"
 
-# If the containers are running, execute these commnds within(the container) to setup the database to be used.
-
 if docker-compose ps | grep -q Up; then
     echo "Attempting to wake the Database..."
     sleep 3
-    docker-compose exec web python /app/app/startup_scripts/backend_prestart.py
+   # docker-compose exec web python /app/app/startup_scripts/backend_prestart.py
     sleep 5
     echo "Running Alembic migrations..."
     sleep 3

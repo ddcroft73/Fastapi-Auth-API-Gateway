@@ -41,9 +41,9 @@ services:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_PASSWORD: 5432
-      POSTGRES_DB: deadMANsSwitch
-      POSTGRES_USER: localJoe
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: users_database
+      POSTGRES_USER: deadMANsSwitch
     ports:
       - "5432:5432"
     volumes:
