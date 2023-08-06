@@ -11,7 +11,8 @@ class Settings(BaseSettings):
 
     API_V1_STR: str = "/api/v1"
     API_KEY: str = os.getenv("API_KEY")
-    PROJECT_NAME: str = 'dmsPlus Auth Gateway'
+
+    PROJECT_NAME: str = 'Dead Mans Switch... PLUS!'
 
     CELERY_BROKER_URL: str ="redis://redis:6379/0"
     CELERY_RESULT_BACKEND: str ="redis://redis:6379/0"
@@ -51,6 +52,7 @@ class Settings(BaseSettings):
     def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
+        
         return PostgresDsn.build(
             scheme="postgresql",
             user=values.get("POSTGRES_USER"),
@@ -58,6 +60,12 @@ class Settings(BaseSettings):
             host=values.get("POSTGRES_SERVER"),
             path=f"/{values.get('POSTGRES_DB') or ''}",
         )
+
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
+    EMAILS_ENABLED: bool = True
+    VERIFY_EMAIL_LINK: AnyHttpUrl = None
+
+    USERS_OPEN_REGISTRATION: bool = False
 
     class Config:
         env_file = "../.env"

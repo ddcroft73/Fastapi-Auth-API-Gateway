@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
@@ -11,11 +11,11 @@ from app.api import deps
 from app.core.config import settings
 from app.mail_utils import send_new_account_email
 
+from app.utils.logger import logzz
 
 router = APIRouter()
 
 # api/v1/
-
 @router.get("/", response_model=List[schemas.User])
 def read_users(
     db: Session = Depends(deps.get_db),
@@ -34,7 +34,7 @@ def read_users(
 # api/v1/
 @router.post("/", response_model=schemas.User)
 def create_user(
-    *,
+    *, # ever thang after, gone half ta be... keyword arg.
     db: Session = Depends(deps.get_db),
     user_in: schemas.UserCreate,
     current_user: models.User = Depends(deps.get_current_active_superuser),
@@ -48,6 +48,7 @@ def create_user(
             status_code=400,
             detail="The user with this username already exists in the system.",
         )
+    
     user = crud.user.create(db, obj_in=user_in)
     if settings.EMAILS_ENABLED and user_in.email:
         send_new_account_email(
@@ -71,17 +72,22 @@ def update_user_me(
     """
     current_user_data = jsonable_encoder(current_user)
     user_in = schemas.UserUpdate(**current_user_data)
+
+    logzz.debug(full_name, timestamp=1)
+
     if password is not None:
         user_in.password = password
     if full_name is not None:
         user_in.full_name = full_name
     if email is not None:
         user_in.email = email
+
     user = crud.user.update(db, db_obj=current_user, obj_in=user_in)
     return user
 
 
-# api/v1/me
+
+# api/v1/users/me
 @router.get("/me", response_model=schemas.User)
 def read_user_me(
     db: Session = Depends(deps.get_db),
@@ -110,12 +116,14 @@ def create_user_open(
             status_code=403,
             detail="Open user registration is forbidden on this server",
         )
+    
     user = crud.user.get_by_email(db, email=email)
     if user:
         raise HTTPException(
             status_code=400,
             detail="The user with this username already exists in the system",
         )
+    
     user_in = schemas.UserCreate(password=password, email=email, full_name=full_name)
     user = crud.user.create(db, obj_in=user_in)
     return user
@@ -130,13 +138,15 @@ def read_user_by_id(
     """
     Get a specific user by id.
     """
-    user = crud.user.get(db, id=user_id)
+    user = crud.user.get(db, model_id=user_id)
     if user == current_user:
         return user
+    
     if not crud.user.is_superuser(current_user):
         raise HTTPException(
             status_code=400, detail="The user doesn't have enough privileges"
         )
+    
     return user
 
 #/api/v1/users/{user_id}
@@ -157,5 +167,6 @@ def update_user(
             status_code=404,
             detail="The user with this username does not exist in the system",
         )
+    
     user = crud.user.update(db, db_obj=user, obj_in=user_in)
     return user

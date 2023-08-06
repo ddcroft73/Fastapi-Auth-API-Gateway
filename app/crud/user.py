@@ -7,7 +7,7 @@ from app.models.user import User
 from app.schemas import UserCreate, UserUpdate
 
 from app.core.security import get_password_hash, verify_password
-
+from app.utils.logger import logzz
 
 class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     # Declare model specific CRUD operation methods.
@@ -34,10 +34,12 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             update_data = obj_in
         else:
             update_data = obj_in.dict(exclude_unset=True)
-        if update_data["password"]:
+
+        if "password" in update_data: #if update_data["password"]:
             hashed_password = get_password_hash(update_data["password"])
             del update_data["password"]
             update_data["hashed_password"] = hashed_password
+
         return super().update(db, db_obj=db_obj, obj_in=update_data)
 
     def authenticate(self, db: Session, *, email: str, password: str) -> Optional[User]:

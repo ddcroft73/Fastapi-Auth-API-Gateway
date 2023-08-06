@@ -50,6 +50,9 @@ def send_reset_password_email(email_to: str, email: str, token: str) -> None:
 
 
 def send_new_account_email(email_to: str, username: str, password: str) -> None:
+    # I need to design an email foe verifying email account.
+    # insert a link to clixk and when they ckick it, it goes to the users dashboard. 
+
     '''project_name = settings.PROJECT_NAME
     subject = f"{project_name} - New account for user {username}"
     with open(Path(settings.EMAIL_TEMPLATES_DIR) / "new_account.html") as f:

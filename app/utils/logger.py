@@ -312,6 +312,10 @@ class EZLogger:
             add a prefix to the message string, and reference
             the correct file to write to.
             """
+            if message == None: message = "None"
+            if isinstance(message, dict):
+                message =str(message)
+                
             if level == self.Level.INFO:
                 file_name = self.info_filename
                 message = self.INFO_PRE + message
@@ -346,7 +350,7 @@ class EZLogger:
                 )
 
         # Finalize the logfile entry.
-        fname, message = ready_message(message=message)
+        fname, message = ready_message(message)
         fname, message = add_final_touches(file_name=fname, message=message)
         #
         # Before Writiing to the file, check its size to see if it's time to archive it.
