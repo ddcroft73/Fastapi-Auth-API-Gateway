@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER: EmailStr = os.getenv("FIRST_SUPERUSER")
     FIRST_SUPERUSER_PASSWORD: str = os.getenv("FIRST_SUPERUSER_PASSWORD")
 
-    LOG_DIRECTORY: str = "./logs" # Always put the log directory in the CWD.
+    LOG_DIRECTORY: str = "./logs" # Always put the log directory in the CWD, off the main entry point.
     LOG_ARCHIVE_DIRECTORY: str = f"{LOG_DIRECTORY}/log-archives"
     DEFAULT_LOG_FILE: str = f"{LOG_DIRECTORY}/DEFAULT-app-logs.log"  # This where all log entries go If a destnation is not specified.
     
@@ -62,9 +62,11 @@ class Settings(BaseSettings):
         )
 
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
-    EMAILS_ENABLED: bool = True
-    VERIFY_EMAIL_LINK: AnyHttpUrl = None
+    EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 24
 
+    EMAILS_ENABLED: bool = True
+    # This will be the link to get to the users DashBoard, or homepage
+    VERIFY_EMAIL_LINK: AnyHttpUrl = None
     USERS_OPEN_REGISTRATION: bool = False
 
     class Config:
@@ -72,5 +74,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-
-print(settings.SQLALCHEMY_DATABASE_URI)

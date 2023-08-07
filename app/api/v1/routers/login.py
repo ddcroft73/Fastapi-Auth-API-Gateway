@@ -64,7 +64,7 @@ def test_token(current_user: models.User = Depends(deps.get_current_user)) -> An
 def recover_password(email: str, db: Session = Depends(deps.get_db)) -> Any:
     """
     Password Recovery:
-    If the user is in the system, ie. THe email address checks out, Then they will be
+    If the user is in the system,  Then they will be
     sent an email with instructions on how to change their password.
     """
     user = crud.user.get_by_email(db, email=email)

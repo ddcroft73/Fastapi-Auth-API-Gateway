@@ -12,7 +12,7 @@ router = APIRouter()
 
 @router.get("/test-celery{var}", response_model=schemas.Msg)
 def test_celery(
-    #current_user: models.User = Depends(deps.get_current_active_superuser),
+    current_user: models.User = Depends(deps.get_current_active_superuser),
 ) -> Any:
     """
     Test Celery: 

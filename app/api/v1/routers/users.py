@@ -49,11 +49,15 @@ def create_user(
             detail="The user with this username already exists in the system.",
         )
     
-    user = crud.user.create(db, obj_in=user_in)
-    if settings.EMAILS_ENABLED and user_in.email:
-        send_new_account_email(
-            email_to=user_in.email, username=user_in.email, password=user_in.password
-        )
+    try:
+        user = crud.user.create(db, obj_in=user_in)
+        if settings.EMAILS_ENABLED and user_in.email:
+            send_new_account_email(
+                email_to=user_in.email, username=user_in.email, password=user_in.password
+            )
+    except Exception as err:
+        logzz.error(f"There was an error in create_user(): \n{str(err)} ")
+
     return user
 
 
@@ -70,19 +74,22 @@ def update_user_me(
     """
     Update own user.
     """
-    current_user_data = jsonable_encoder(current_user)
-    user_in = schemas.UserUpdate(**current_user_data)
+    try: 
+        current_user_data = jsonable_encoder(current_user)
+        user_in = schemas.UserUpdate(**current_user_data)
 
-    logzz.debug(full_name, timestamp=1)
+        if password is not None:
+            user_in.password = password
+        if full_name is not None:
+            user_in.full_name = full_name
+        if email is not None:
+            user_in.email = email
 
-    if password is not None:
-        user_in.password = password
-    if full_name is not None:
-        user_in.full_name = full_name
-    if email is not None:
-        user_in.email = email
+        user = crud.user.update(db, db_obj=current_user, obj_in=user_in)
 
-    user = crud.user.update(db, db_obj=current_user, obj_in=user_in)
+    except Exception as err:
+        logzz.error(f"An error occured in 'update_user_me()': \n{str(err)}")
+
     return user
 
 
@@ -111,21 +118,31 @@ def create_user_open(
     """
     Create new user without the need to be logged in.
     """
-    if not settings.USERS_OPEN_REGISTRATION:
-        raise HTTPException(
-            status_code=403,
-            detail="Open user registration is forbidden on this server",
+    try:
+        if not settings.USERS_OPEN_REGISTRATION:
+            raise HTTPException(
+                status_code=403,
+                detail="Open user registration is forbidden on this server",
+            )
+        
+        user = crud.user.get_by_email(db, email=email)
+        if user:
+            raise HTTPException(
+                status_code=400,
+                detail="The user with this username already exists in the system",
+            )
+        
+        user_in = schemas.UserCreate(
+            password=password,
+            email=email, 
+            full_name=full_name
         )
-    
-    user = crud.user.get_by_email(db, email=email)
-    if user:
-        raise HTTPException(
-            status_code=400,
-            detail="The user with this username already exists in the system",
-        )
-    
-    user_in = schemas.UserCreate(password=password, email=email, full_name=full_name)
-    user = crud.user.create(db, obj_in=user_in)
+        
+        user = crud.user.create(db, obj_in=user_in)
+
+    except Exception as err:
+        logzz.error(f"An error occured in 'create_user_open()': \n{str(err)}")
+
     return user
 
 #/api/v1/users/{user_id}
@@ -170,3 +187,10 @@ def update_user(
     
     user = crud.user.update(db, db_obj=user, obj_in=user_in)
     return user
+
+
+#
+# Add an endpoint that will allow me to lookup a user by email, or full_name. Should
+# be able to do this as well as ID. You need to know the ID to lok it up, Seems obvious 
+# that Email or name would be more benificial
+#
