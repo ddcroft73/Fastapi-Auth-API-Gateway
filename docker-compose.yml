@@ -8,7 +8,7 @@ services:
       dockerfile: ./backend.dockerfile
     ports:
       - 8015:8000
-    command: uvicorn app.main:app --host 0.0.0.0 --reload
+    command: uvicorn app.main:app --host 0.0.0.0 
     volumes:
       - .:/app
     environment:
@@ -24,8 +24,8 @@ services:
 
   worker:
     build: 
-      context: .
-      dockerfile: ./celery.dockerfile
+      context: .  # On desktop, change the dockerfile to ./backend.dockerfile.
+      dockerfile: ./backend.dockerfile
     command: celery --app background_tasks.tasks worker --loglevel=info --logfile=logs/celery.log
     volumes:
       - .:/app
@@ -48,6 +48,16 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+
+  sandbox:
+    build:
+      context: .
+      dockerfile: ./sandbox.dockerfile
+    volumes:
+      - ./app/sandbox:/app/sandbox
+    command: tail -f /dev/null # Dont let the container close. 
+    depends_on:
+      - web
 
 volumes:
   pgdata:

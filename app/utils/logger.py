@@ -312,9 +312,11 @@ class EZLogger:
             add a prefix to the message string, and reference
             the correct file to write to.
             """
+            # If the message happens to come back as None. or its a dictionary,
+            # modify the input so its reflected and does not choke.
             if message == None: message = "None"
             if isinstance(message, dict):
-                message =str(message)
+                message = str(message)
                 
             if level == self.Level.INFO:
                 file_name = self.info_filename
@@ -340,7 +342,7 @@ class EZLogger:
             With the helpof a class created just to deal with the file system
             """
             try:
-                filesys.write(file_name, message, "a")
+                filesys.write(file_name, message, mode="a")
 
             except Exception as exc:
                 print(
@@ -449,8 +451,8 @@ class EZLogger:
 
 
 logzz = EZLogger(
-    info_filename="INFO_log.log",
-    debug_filename=None,
+    info_filename="INFO_logzz.log",
+    debug_filename="DEBUG_logzz.log",
     error_filename="ERROR_logzz.log",
     warning_filename=None,
     output_destination=EZLogger.FILE,

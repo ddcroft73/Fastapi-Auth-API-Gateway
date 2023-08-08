@@ -13,4 +13,3 @@ python-jose[cryptography]==3.3.0
 sqlalchemy==2.0.19
 email-validator==2.0.0
 passlib[bcrypt]==1.7.4
-tenacity==8.2.2
