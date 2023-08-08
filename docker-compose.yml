@@ -1,23 +1,49 @@
 version: '3.8'
 
-services: 
-  web-api:
-      build: 
-        context: .
-        dockerfile: ./Dockerfile
-      ports:
-        - 8015:8000
-      command: uvicorn app.main:app --host 0.0.0.0 --reload
-      volumes:
-        - .:/app
+services:
+
+  web:
+    build: 
+      context: .
+      dockerfile: ./backend.dockerfile
+    ports:
+      - 8015:8000
+    command: uvicorn app.main:app --host 0.0.0.0 --reload
+    volumes:
+      - .:/app
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - TZ=US/Eastern
+    depends_on:
+      - redis
+      - db
+
+  redis:
+    image: redis:7
+
+  worker:
+    build: 
+      context: .
+      dockerfile: ./celery.dockerfile
+    command: celery --app background_tasks.tasks worker --loglevel=info --logfile=logs/celery.log
+    volumes:
+      - .:/app
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - TZ=US/Eastern
+    depends_on:
+      - web
+      - redis
 
   db:
-    image:  postgres:15
+    image: postgres:15
     restart: always
     environment:
-      POSTGRES_PASSWORD: optimo
-      POSTGRES_DB: app
-      POSTGRES_USER: deadMANSSwitch
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: users_database
+      POSTGRES_USER: deadMANsSwitch
     ports:
       - "5432:5432"
     volumes:
@@ -25,3 +51,5 @@ services:
 
 volumes:
   pgdata:
+
+

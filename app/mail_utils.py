@@ -9,8 +9,9 @@ from jose import jwt
 
 from app.core.config import settings
 
-
-# Keep these and make api calls to send the emails.
+# 
+# Connect with the Notifications API here
+#  
 
 def send_email(
     email_to: str,
@@ -49,6 +50,9 @@ def send_reset_password_email(email_to: str, email: str, token: str) -> None:
 
 
 def send_new_account_email(email_to: str, username: str, password: str) -> None:
+    # I need to design an email foe verifying email account.
+    # insert a link to clixk and when they ckick it, it goes to the users dashboard. 
+
     '''project_name = settings.PROJECT_NAME
     subject = f"{project_name} - New account for user {username}"
     with open(Path(settings.EMAIL_TEMPLATES_DIR) / "new_account.html") as f:
@@ -75,14 +79,14 @@ def generate_password_reset_token(email: str) -> str:
     expires = now + delta
     exp = expires.timestamp()
     encoded_jwt = jwt.encode(
-        {"exp": exp, "nbf": now, "sub": email}, settings.SECRET_KEY, algorithm="HS256",
+        {"exp": exp, "nbf": now, "sub": email}, settings.API_KEY, algorithm="HS256",
     )
     return encoded_jwt
 
 
 def verify_password_reset_token(token: str) -> Optional[str]:
     try:
-        decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        decoded_token = jwt.decode(token, settings.API_KEY, algorithms=["HS256"])
         return decoded_token["email"]
     except jwt.JWTError:
         return None
