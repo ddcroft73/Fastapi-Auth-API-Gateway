@@ -1,7 +1,9 @@
 import requests
 import json
 
-BASE_URL: str = 'http://localhost:8015/api/v1/'
+BASE_URL: str = 'http://web:8000/api/v1/' # Must use this address from within containers.
+
+#BASE_URL: str = 'http://localhost:8015/api/v1/'
 
 #Login and get token
 def login(user_id: str, password: str, verbose: bool=True):

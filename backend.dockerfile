@@ -15,4 +15,3 @@ RUN pip install -r requirements.txt
 COPY . .
 
 RUN chmod +x first_start.sh
-

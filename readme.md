@@ -12,7 +12,7 @@ This application is desinged for a specific purpose and tailored to my needs. (I
 
 ## Sandbox Testing: 
 As of now I am spinning up a container beside that app in development to run sripts in to test and tweak the endpoints. It makes more sense than just writing a separate program in another directory on both computers. This way I can carry it from computer to computer. I do Intend to include some more tradtional tests as well. But For some reason Curl does not play well with this API. I get Invalid HTTP request and for some reason it will not effect changes to the user data. It has to be python scripts or... shit I hope JS requests work... Havent even gotten that far... ok, assuming they will. This shouldgive me an equally effective way to test the API.
-(Currently Debugging this)
+
 
 ## Tech Stack:
 - FastAPI
