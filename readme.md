@@ -2,6 +2,8 @@
 
 ## FastAPI Auth Gateway
 
+(If anyone should happen on this, this is an evolving readme and project. This stuff changes sometimes daily, so if something looks dumb, It probably is and I'm working on it.)
+
 A Python FastAPI service to authenticate authorize and manage my user base. As of now I am going forward with a small, small micro service architecture. I had initially planned to use a prebuilt project that had the boilerplate in place for dealing with the database, login, registration, password recovery, etc. I met with a lot of issues in this endeavor and decided to breakdown [Tiangolos'](https://github.com/tiangolo/full-stack-fastapi-postgresql/tree/master) Starter Project. It, and every other boilerplate project I tried had a lot of dependency issues(typical after 3 years) and I scrapped the idea, and decided to do it myself. However, I am leaning heavy on his code. It's going to save me a lot of time and the knowledge gained in the process is worth a lot to me. The way he handles the mundane tasks that all user based web apps must encounter has taught me a lot, and I don't have to alter much at all (There were actually a few errors. I'm really surprised they got through. They were rather trivial, which leads me to believe that others just fixed them and moved on.). Given my experience with this stuff (prior exp programming, very little with web dev.) I believe it would be prudent to start with a monolith (They say its easier). However I have already built the 
 [email service](https://github.com/ddcroft73/email-service-v2/tree/main). (This one is all me and my code, and it's still under development.) I am rather happy with that part and thus far it's pretty strong and should fullfill my needs. It looks like I'm going to continue on the MSA path.
 
@@ -44,16 +46,27 @@ As of now I am spinning up a container beside that app in development to run sri
 
 ## Latest Changes:
 - Added a Sandbox testing container. (see above)
-- Removeed the revisions from the database and Started fresh. It felt ignorant to leave those backwards revisions and it would definitley cause trouble when trying to do a clean install.
+- Removed the revisions from the database and Started fresh. It felt ignorant to leave those backwards revisions and it would definitley cause trouble when trying to do a clean install.
 - Due to an issue between my desktop and laptop, the `worker` service must be ran with `backend.dockerfile` on the desktop. (I'll deal with this later)
 - Started writing sandbox script(s) for endpoint testing...
+- Yes they are mininal. More to come.
 
-## Thoughts:
+## Thoughts and Plans:
+### 08/10/23-
+Ok..... I am also going to need account data as well. Subscription type, start date, end date, status. I am going to keep that here as well. I'll add another table, `Account` and all users will default to the Free subscription, when a user is created\registered. As opposed to Basic, Full, Premium.
+
+I'm not going to add this yet. I will add in from `phone_number` down, get the logic for that working and then elude to adding an Account table.  (Just need some time off...)
+
+SHOULD I MAKE AN ACCOUNT SERVICE?.... no... no.
+<hr>
+
+### Initial Thoughts-
 So at this point I need to be deciding how I intend to incorporate the core functionality of this app. My biggest question is DO I just go ahead and add it to this app? or do I make yet another service that does just that. That would give me:
 
 - Notification Service Was Email, but Im thinking about incorporating the others as well.(Email, SMS, Social Media)
 - Auth Gateway
 - Main API that handles "WHat the app does"
+
 
 That's only 3. Unless I should break the Notifications Service into 3? (Email, SMS, Social Media). hmmm Im trying to think about which modules would get the most action. As far as Notiications, Emails will be sent probably on the reg. And Maybe SMS depending on how the users config their preferences. Social Media will likely only be dispatched when A package deploys. That would be a busy service. Auth Gateway will be used to register, login (Only after the token has expired) The Main API will be keepig track of a LOT of data and handling intervals to see if its indeed time to deploy... What about a deploy service? meh.. not there yet. I think I will try to keep it at 2, or 3. Is It going to be more expensive to deploy a cluster in docker compose? Should I scratch this and go back to using virtual environments, and figure out how to deploy them seperately? That in itself just sounds expensive..
 

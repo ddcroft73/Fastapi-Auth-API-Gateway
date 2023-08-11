@@ -1,9 +1,17 @@
+#from file_handler import filesys
 import requests
 import json
+from pydantic import BaseModel
 
 BASE_URL: str = 'http://web:8000/api/v1/' # Must use this address from within containers.
 
 #BASE_URL: str = 'http://localhost:8015/api/v1/'
+
+class User(BaseModel):
+    email: str = None
+    password: str = None
+    full_name: str = None
+    
 
 #Login and get token
 def login(user_id: str, password: str, verbose: bool=True):
@@ -29,11 +37,30 @@ def get_me():
     url = f"{BASE_URL}users/me"
 
     headers = {
-        'Authorization': f'Bearer {login(user_id="ddc.dev.python@gmail.com", password="password.superserial.safe", verbose=False)}',
+        'Authorization': f'Bearer {login(user_id="ddc.dev.python@gmail.com", password="password.for.debugging", verbose=False)}',
         'Content-Type': 'application/json'
     }
     response = requests.get(url, headers=headers)
 
     return response.json()
 
-print(get_me())
+
+def update_me(user: User) -> dict:
+    url = f"{BASE_URL}users/me"
+    headers = {
+        'Authorization': f'Bearer {login(user_id="ddc.dev.python@gmail.com", password="password.for.debugging", verbose=False)}',
+        'Content-Type': 'application/json'
+    }
+    response = requests.put(url, headers=headers, json=user.dict())  
+    return response.json()
+
+#
+# Update Current user:
+#
+user = User(
+    full_name= "John P. Doefitch, Jr.",
+    email=None,
+    password=None
+)
+
+print(update_me(user))
