@@ -1,8 +1,15 @@
 
 from typing import Optional
-
 from pydantic import BaseModel, EmailStr
 
+# Will need to ammend the schema....add()
+# 
+# phone_number
+# pin_number IDK about this....
+# is_verified: 
+# failed_attempts
+# account_locked
+#   
 
 # Shared properties
 class UserBase(BaseModel):
