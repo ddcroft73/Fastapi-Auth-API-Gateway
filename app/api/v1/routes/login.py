@@ -1,7 +1,7 @@
 from datetime import timedelta
 from typing import Any
 
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -10,6 +10,7 @@ from app import crud, models, schemas
 from app.api import deps
 from app.core import security
 from app.core.config import settings
+from app.utils.logger import logzz
 from app.core.security import get_password_hash
 from app.mail_utils import (
     generate_password_reset_token,
@@ -24,6 +25,7 @@ router = APIRouter()
 #
 @router.post("/login/access-token", response_model=schemas.Token)
 def login_access_token(
+    request: Request,
     db: Session = Depends(deps.get_db), 
     form_data: OAuth2PasswordRequestForm = Depends()
 ) -> Any:
@@ -32,6 +34,10 @@ def login_access_token(
     WHen a user logs in, an access token is generated and returned if the credintials
     check out. The user will not have to login again until the token expires
     """
+    # Expand on this.. Maybe even log all the logins.
+    client_host = request.client.host
+    logzz.info(client_host)    
+
     user = crud.user.authenticate(
         db, email=form_data.username, password=form_data.password
     )

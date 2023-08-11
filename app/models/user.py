@@ -6,6 +6,12 @@ from sqlalchemy import Boolean, Column, Integer, String
 
 from app.database.base_class import Base
 
+# phone_number
+# pin_number IDK about this....
+# is_verified: 
+# failed_attempts
+# account_locked
+
 
 class User(Base):
     id = Column(Integer, primary_key=True, index=True)
