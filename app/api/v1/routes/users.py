@@ -34,13 +34,14 @@ def read_users(
 # api/v1/
 @router.post("/", response_model=schemas.User)
 def create_user(
-    *, # ever thang after, gone half ta be... keyword arg.
+    *, 
     db: Session = Depends(deps.get_db),
     user_in: schemas.UserCreate,
-    current_user: models.User = Depends(deps.get_current_active_superuser),
+    #current_user: models.User = Depends(deps.get_current_active_superuser),
 ) -> Any:
     """
     Create new user.
+    When a user registers, this endpoint creates the user.
     """
     user = crud.user.get_by_email(db, email=user_in.email)
     if user:
@@ -69,6 +70,10 @@ def update_user_me(
     password: str = Body(None),
     full_name: str = Body(None),
     email: EmailStr = Body(None),
+    phone_number: str = Body(None),
+    is_verified: bool = Body(False),
+    failed_attempts: int = Body(None),
+    account_locked: bool = Body(False),
     current_user: models.User = Depends(deps.get_current_active_user),
 ) -> Any:
     """
@@ -84,6 +89,14 @@ def update_user_me(
             user_in.full_name = full_name
         if email is not None:
             user_in.email = email
+        if phone_number is not None:  # Update for new field
+            user_in.phone_number = phone_number
+        if is_verified is not None:  # Update for new field
+            user_in.is_verified = is_verified
+        if failed_attempts is not None:  # Update for new field
+            user_in.failed_attempts = failed_attempts
+        if account_locked is not None:  # Update for new field
+            user_in.account_locked = account_locked
 
         user = crud.user.update(db, db_obj=current_user, obj_in=user_in)
 
@@ -114,6 +127,10 @@ def create_user_open(
     password: str = Body(...),
     email: EmailStr = Body(...),
     full_name: str = Body(None),
+    phone_number: str = Body(None),
+    is_verified: bool = Body(None),
+    failed_attempts: int = Body(None),
+    account_locked: bool = Body(None),
 ) -> Any:
     """
     Create new user without the need to be logged in.
@@ -135,7 +152,11 @@ def create_user_open(
         user_in = schemas.UserCreate(
             password=password,
             email=email, 
-            full_name=full_name
+            full_name=full_name,
+            phone_number=phone_number,
+            is_verified=is_verified,
+            failed_attempts=failed_attempts,
+            account_locked=account_locked
         )
         
         user = crud.user.create(db, obj_in=user_in)
@@ -177,8 +198,9 @@ def update_user(
 ) -> Any:
     """
     Update a user.
+    SuperUser action. 
     """
-    user = crud.user.get(db, id=user_id)
+    user = crud.user.get(db, model_id=user_id)
     if not user:
         raise HTTPException(
             status_code=404,

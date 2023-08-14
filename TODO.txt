@@ -1,0 +1,7 @@
+Add new fields to the User table
+Implement the logic for the fields
+  - failed_attempts (coed to count and timer for the max inputs)
+  - account_locked (Dependency? Or just check it at every endpoint?)
+  - is_verified (May just leave this as is_active, but I still need to bubild the verify email code)
+Work on the logger. Maybe add a logger that is dedicated to logins, and other inportant actions.
+  

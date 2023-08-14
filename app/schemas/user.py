@@ -5,7 +5,6 @@ from pydantic import BaseModel, EmailStr
 # Will need to ammend the schema....add()
 # 
 # phone_number
-# pin_number IDK about this....
 # is_verified: 
 # failed_attempts
 # account_locked
@@ -17,6 +16,11 @@ class UserBase(BaseModel):
     is_active: Optional[bool] = True
     is_superuser: bool = False
     full_name: Optional[str] = None
+    # New Fields
+    phone_number: Optional[str] = None
+    is_verified: Optional[bool] = False
+    failed_attempts: Optional[int] = 0
+    account_locked: Optional[bool] = False
 
 
 # Properties to receive via API on creation

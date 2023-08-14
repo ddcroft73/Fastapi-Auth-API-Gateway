@@ -21,6 +21,12 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             hashed_password=get_password_hash(obj_in.password),
             full_name=obj_in.full_name,
             is_superuser=obj_in.is_superuser,
+            # New Fields
+            phone_number=obj_in.phone_number if obj_in.phone_number else None,
+            is_verified=obj_in.is_verified if obj_in.is_verified else False,
+            failed_attempts=obj_in.failed_attempts if obj_in.failed_attempts else 0,
+            account_locked=obj_in.account_locked if obj_in.account_locked else False
+  
         )
         db.add(db_obj)
         db.commit()

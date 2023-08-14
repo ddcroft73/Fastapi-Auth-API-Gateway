@@ -1,5 +1,6 @@
 .env
 snippets.txt
+scraps.txt
 logs/*.log
 .vscode
 app/tests/code_test.py

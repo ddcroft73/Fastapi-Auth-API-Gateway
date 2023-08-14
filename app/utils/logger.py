@@ -215,6 +215,7 @@ class EZLogger:
     DEBUG_PRE: str = "DEBUG: "
     ERROR_PRE: str = "ERROR: "
     WARN_PRE: str = "WARNING: "
+   # LOGIN_PRE: str ="LOGIN INFO"
 
     FILE: int = 0
     SCREEN: int = 1
@@ -225,6 +226,7 @@ class EZLogger:
         DEBUG: int = 20
         ERROR: int = 30
         WARN: int = 40
+       # LOGIN: int = 50
     
     LOG_DIRECTORY: str = settings.LOG_DIRECTORY    
     LOG_ARCHIVE_DIRECTORY: str = settings.LOG_ARCHIVE_DIRECTORY

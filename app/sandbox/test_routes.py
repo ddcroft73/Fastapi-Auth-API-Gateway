@@ -7,10 +7,14 @@ BASE_URL: str = 'http://web:8000/api/v1/' # Must use this address from within co
 
 #BASE_URL: str = 'http://localhost:8015/api/v1/'
 
-class User(BaseModel):
+class UpdateUser(BaseModel):
     email: str = None
     password: str = None
     full_name: str = None
+    phone_number: str = None
+    is_verified: bool = True
+    account_locked: bool = False
+    failed_attempts: int = 0
     
 
 #Login and get token
@@ -57,10 +61,13 @@ def update_me(user: User) -> dict:
 #
 # Update Current user:
 #
-user = User(
+user = UpdateUser(
     full_name= "John P. Doefitch, Jr.",
     email=None,
-    password=None
+    password=None,
+    phone_number='2347894567',
+    account_locked=False,
+    failed_attempts=2
 )
 
 print(update_me(user))
