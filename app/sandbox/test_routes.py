@@ -1,4 +1,4 @@
-from file_handler import filesys
+
 import requests
 import json
 from pydantic import BaseModel
@@ -134,9 +134,19 @@ def create_normal_user(new_user: CreateUser):
         print(f"Failed to register user. Status code: {response.status_code}")
         print(response.text)
 
+#util/test-celery{var}
+def test_celery(var: str):
+    url = f"{BASE_URL}util/test-celery{var}"
+    headers = {
+        'Authorization': f'Bearer {login(user_id="ddc.dev.python@gmail.com", password="password.for.debugging", verbose=False)}',
+        'Content-Type': 'application/json'
+    }
+    response = requests.get(url, headers=headers) 
+    return response.json()
 
 #print(update_me(userUp))
 #create_normal_user(new_user)
-#print(get_all_users())
-print(update_user(2))
+print(get_all_users())
+#print(update_user(2))
 #print(get_me())
+print(test_celery("This here a test!"))

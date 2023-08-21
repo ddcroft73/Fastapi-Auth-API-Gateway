@@ -1,7 +1,7 @@
 .env
 snippets.txt
 scraps.txt
-logs/*.log
+logs
 .vscode
 app/tests/code_test.py
 logs/*.py

@@ -36,7 +36,7 @@ def login_access_token(
     """
     # Expand on this.. Maybe even log all the logins.
     client_host = request.client.host
-    logzz.info(client_host)    
+    logzz.login(f'{client_host}  logged in @: ', timestamp=1)    
 
     user = crud.user.authenticate(
         db, email=form_data.username, password=form_data.password

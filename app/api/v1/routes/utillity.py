@@ -12,6 +12,7 @@ router = APIRouter()
 
 @router.get("/test-celery{var}", response_model=schemas.Msg)
 def test_celery(
+    var: str,
     current_user: models.User = Depends(deps.get_current_active_superuser),
 ) -> Any:
     """
@@ -19,5 +20,5 @@ def test_celery(
     Run the current celery task to make sure its working. will only proceed if 
     this user is a current active superuser. 
     """
-    celery_task.delay("Celery task Variable")
+    celery_task.delay(var)
     return {"msg": "Task Initiated."}

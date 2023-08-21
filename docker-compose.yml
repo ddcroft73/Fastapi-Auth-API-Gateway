@@ -52,7 +52,7 @@ services:
   sandbox:
     build:
       context: .
-      dockerfile: ./sandbox.dockerfile
+      dockerfile: ./sandbox.dockerfile 
     volumes:
       - ./app/sandbox:/app/sandbox
     command: tail -f /dev/null # Dont let the container close. 
