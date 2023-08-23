@@ -24,8 +24,8 @@ class Settings(BaseSettings):
     LOG_ARCHIVE_DIRECTORY: str = f"{LOG_DIRECTORY}/log-archives"
     DEFAULT_LOG_FILE: str = f"{LOG_DIRECTORY}/DEFAULT-app-logs.log"  # This where all log entries go If a destnation is not specified.
     
-    '''
-    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = ['*']
+    
+    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = ['http://localhost:3001']
 
     @validator("BACKEND_CORS_ORIGINS", pre=True)
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
@@ -34,6 +34,7 @@ class Settings(BaseSettings):
         elif isinstance(v, (list, str)):
             return v
         raise ValueError(v)
+    '''
     SENTRY_DSN: Optional[HttpUrl] = None
 
     @validator("SENTRY_DSN", pre=True)

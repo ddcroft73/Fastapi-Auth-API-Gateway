@@ -14,7 +14,7 @@ app = FastAPI(
 
 
 # Set all CORS enabled origins
-'''
+
 if settings.BACKEND_CORS_ORIGINS:
     app.add_middleware(
         CORSMiddleware,
@@ -23,7 +23,7 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-'''
+
 
 @app.get("/", tags=['home'], response_model=schemas.Msg)
 def root():

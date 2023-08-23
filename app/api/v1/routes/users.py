@@ -1,6 +1,12 @@
 from typing import Any, List, Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import (
+    APIRouter, 
+    Body, 
+    Depends, 
+    HTTPException, 
+    Request
+)
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse 
 from pydantic.networks import EmailStr
@@ -18,6 +24,7 @@ router = APIRouter()
 # api/v1/
 @router.get("/", response_model=List[schemas.User])
 def read_users(
+    request: Request,
     db: Session = Depends(deps.get_db),
     skip: int = 0,
     limit: int = 100,
@@ -27,6 +34,10 @@ def read_users(
     Retrieve users: 
     Pull out all users in the system and return.
     """
+
+    temp = request.client 
+    logzz.info(temp)
+    
     users = crud.user.get_multi(db, skip=skip, limit=limit)
     return users
 
@@ -43,6 +54,7 @@ def create_user(
     Create new user.
     When a user registers, this endpoint creates the user.
     """
+
     user = crud.user.get_by_email(db, email=user_in.email)
     if user:
         raise HTTPException(
