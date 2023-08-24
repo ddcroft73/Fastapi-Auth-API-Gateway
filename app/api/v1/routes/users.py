@@ -223,8 +223,3 @@ def update_user(
     return user
 
 
-#
-# Add an endpoint that will allow me to lookup a user by email, or full_name. Should
-# be able to do this as well as ID. You need to know the ID to lok it up, Seems obvious 
-# that Email or name would be more benificial
-#

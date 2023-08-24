@@ -9,22 +9,51 @@ Not very organized but basic list to do.
 3. Work on the logger. Maybe add a logger that is dedicated to logins, and other inportant actions.  DONE
 
 4. ADD A new table 'Accounts' 
-   "So when a user is created, by default an account for that user is also created." So I need to figure out how 
-   all this is accomplished and what I need to change about my user creation code.
-   "I believe most of the account s\details are not set by the user. I dont believe they will need to 
-   change them as you would options. I;m concerend about how all this will be updated, etc."  Will I need to add
-   new endpoints, Account-update/{user_id}.. etc? I guess I'll feel this out. I feel like the account data is accessed
-   via userUpdate() as it was before, its just now there is a nother table and new data associated.
+   "So when a user is created, by default an account for that user is also created." Whena user updates their
+   account info, and user info, this will still be handled by the user/update endpoint. I'll need to add
+   schema for the account data to be sent in as well, and just do theaccount update with the schema passed in
+   after the user update. if any attributes have been changed in the account update object, it will be updated.
+   simple enough.
    a. model
    b. schema
    c. intergrat3e CRUD class for DB operations
-   d. Update create CRUD for user so that it adds to theaccount table on user creation.
+
+   Account Fields;
+   user_unique_id: str ['THis is a unique identifier that will be shared between this DB and the ClockAPI DB' (Not written yet)]
+   account_creation_date: str
+   account_last_update: str
+   subscription_type: str = 'free'  ['free', 'basic', 'premium']
+   subscription_start_date: str
+   subscription_end_date: str
+   last_login_date: str
+   bill_renew_date: str
+   auto_renewal: bool
+   account_status: str = 'active' ['active', 'paused', 'cancelled', 'fullfilled']
+   account_status_reason: str = None
+   cancellation_date: str = None
+   cancellation_reason: str = None
+   preffered_contact_method: str = 'email' ['email', 'sms']
+   timezone: str
+
+   I need to think abouot how to set up the schema. What data do I want to be returned via api?
+
+
 5. Design Emails:
    a. Email Verify
    b. Forgot username
    c. Forgot password
 6. Add the code to tie in the email api to this api whwn a user is created.
 
-A LOT TO DO! 
+7... Much more. This is good for now. 
+
+Also need to finish the Email Service. 
+
+Need to add in the SMS service to the email service. (This is easy enough. Do I want to use an SMS service, or do I want to just use my
+my SMS via email code? I'll need to use an API to lookup the users carrier by phone... It will be cheesy that way. Letsjust find a 
+decent SMS API service.)
+
+Need to build the SocialMedia Service.
+
+
 
   
