@@ -1,9 +1,10 @@
 #!/bin/bash
-# wakes up the DB, creates the Users tables and inserts some intial data. THis
-# script only needs to be ran once. 
-# After using this script,the stack can be started with 'docker-compose up'
+# Creates the Users tables and inserts some intial data. 
 
-# THis little script I have found is good anytine i revise the DB. 
+# Start the app in one terminal, Open another and launch this script after making any 
+# revisions with Alembic. Edit as needed.
+
+
 set -e
 
 cd "$(dirname "$0")"

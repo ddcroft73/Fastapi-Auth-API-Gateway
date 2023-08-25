@@ -55,6 +55,12 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         if not verify_password(password, user.hashed_password):
             return None
         return user
+## TODO:
+## Add methods to retrieve:
+# phone_number
+# is_verified: 
+# failed_attempts
+# account_locked
 
     def is_active(self, user: User) -> bool:
         return user.is_active
