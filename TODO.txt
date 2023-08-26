@@ -49,10 +49,13 @@ Not very organized but basic list to do.
    Make revisions to the database with Alembic. I will consult AI on this just to make sure. 
 
    
-5. Design Emails:
+5. Design Emails:    add-email-support branch:
    a. Email Verify
-   b. Forgot username
-   c. Forgot password
+   b. Forgot password - pretty much the same as c. 
+   c. Reset Password
+   d. Recover Password
+
+
 6. Add the code to tie in the email api to this api whwn a user is created.
 
 7... Much more. This is good for now. 
