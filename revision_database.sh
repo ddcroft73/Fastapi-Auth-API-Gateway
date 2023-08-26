@@ -4,6 +4,8 @@
 # Start the app in one terminal, Open another and launch this script after making any 
 # revisions with Alembic. Edit as needed.
 
+# 
+
 
 set -e
 
