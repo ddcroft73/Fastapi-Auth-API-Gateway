@@ -7,7 +7,7 @@ from app.models.user import User
 from app.schemas import UserCreate, UserUpdate
 
 from app.core.security import get_password_hash, verify_password
-from app.utils.logger import logzz
+from app.utils.api_logger import logzz
 
 class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     # Declare model specific CRUD operation methods.

@@ -10,7 +10,7 @@ from app import crud, models, schemas
 from app.api import deps
 from app.core import security
 from app.core.config import settings
-from app.utils.logger import logzz
+from app.utils.api_logger import logzz
 from app.core.security import get_password_hash
 from app.mail_utils import (
     generate_password_reset_token,
@@ -122,3 +122,20 @@ def reset_password(
     db.add(user)
     db.commit()
     return JSONResponse({"msg": "Password updated successfully"})
+
+
+
+@router.post("/verify-email/", response_model=schemas.Msg)
+def verify_email(
+    token: str = Body(...),
+    db: Session = Depends(deps.get_db),
+) -> Any:
+    '''
+    The token is passed in via query param. 
+    '''
+    # Verify that the token is valid
+    # get the user by email
+    # make sure they are active
+    # Set is_verified to True
+    # write the changes with the session
+    

@@ -229,15 +229,12 @@ class APILogger():
         archive_log_files: bool = True,
         log_file_max_size: int = 1000,
     ) -> None:
+        self.stream = Stream()
         self.archive = Archive(
             archive_directory=self.LOG_ARCHIVE_DIRECTORY
         )
         self.d_and_t = DateTime()
         self.prnt = ScreenPrinter()
-
-        time_date: tuple[str] = self.d_and_t.date_time_now()        
-        self.start_date: str = time_date[0] 
-        self.start_time: str = time_date[1] 
 
         # file to log internal messages: This is by default, since it would be difficult to ever see any errors 
         # the server may encounter, they are all remanded to the internal.log file. 
@@ -252,7 +249,10 @@ class APILogger():
         self.log_file_max_size = log_file_max_size    # DEBUGING=5      
 
         self.__handle_file_setup()
-
+    
+    def setup(self) -> None:
+        self.__handle_file_setup()
+        
     def __handle_file_setup(self) -> None:
         """
         Handles the creation of any user defined logfiles, the Default
@@ -430,7 +430,10 @@ class APILogger():
     # if not including some method to print to screen. 
     def print(self, message: str, stream: int=0, timestamp: bool=False):
         self.print2_screen(message, stream, timestamp)
-        
+
+    def create_logfile(self, filename: str) -> None:
+        self.__set_log_filename(filename)
+    
 
     def __set_log_filename(self, file_name: str) -> None:
         """This method creates the initial file. If a file already exists, it does nada.

@@ -15,9 +15,9 @@ from sqlalchemy.orm import Session
 from app import crud, models, schemas
 from app.api import deps
 from app.core.config import settings
-from app.mail_utils import send_new_account_email
+from app.mail_utils import send_new_account_email, verify_email, generate_password_reset_token
 
-from app.utils.logger import logzz
+from app.utils.api_logger import logzz
 
 router = APIRouter()
 
@@ -64,10 +64,16 @@ def create_user(
     
     try:
         user = crud.user.create(db, obj_in=user_in)
+        logzz.info(f"New User Created: {user_in.email}", timestamp=1)
+
         if settings.EMAILS_ENABLED and user_in.email:
-            send_new_account_email(
-                email_to=user_in.email, username=user_in.email, password=user_in.password
+           verify_email_token = generate_password_reset_token()
+           verify_email(
+               email_to=user_in.email,
+               email_username=user_in.email, 
+               token=verify_email_token
             )
+            
     except Exception as err:
         logzz.error(f"There was an error in create_user(): \n{str(err)} ")
 
