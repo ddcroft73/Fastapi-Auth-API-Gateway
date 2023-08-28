@@ -1,6 +1,6 @@
 Not very organized but basic list to do.
 
-1. Add new fields to the User table   DONE
+1. Add new fields to the User table   DONE  branch add-user-fields DONE
 2. Implement the logic for the fields
   - failed_attempts (coed to count and timer for the max inputs)
   - account_locked (Dependency? Or just check it at every endpoint?)
@@ -8,7 +8,7 @@ Not very organized but basic list to do.
 
 3. Work on the logger. Maybe add a logger that is dedicated to logins, and other inportant actions.  DONE
 
-4. ADD A new table 'Accounts' 
+4. ADD A new table 'Accounts'     branch add-account-table: Working...
    "So when a user is created, by default an account for that user is also created." When a user updates their
    account info, and user info, this will still be handled by the user/update endpoint. I'll need to add
    schema for the account data to be sent in as well, and just do the account update with the schema passed in
@@ -49,7 +49,10 @@ Not very organized but basic list to do.
    Make revisions to the database with Alembic. I will consult AI on this just to make sure. 
 
    
-5. Design Emails:    add-email-support branch:
+5. Design Emails:     branch add-email-support: Working...
+   I will create a new Email Object to be used to send email requests to the Notification API
+
+   Need to design and build the HTML string representaion for these emails to be sent:
    a. Email Verify
    b. Forgot password - pretty much the same as c. 
    c. Reset Password

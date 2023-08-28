@@ -14,4 +14,4 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-RUN chmod +x first_start.sh
+RUN chmod +x revision_database.sh
