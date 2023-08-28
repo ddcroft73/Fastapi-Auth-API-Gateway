@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     API_KEY: str = os.getenv("API_KEY")
 
-    PROJECT_NAME: str = 'Dead Mans Switch... PLUS!'
+    PROJECT_NAME: str = 'DMS... PLUS!'
 
     CELERY_BROKER_URL: str ="redis://redis:6379/0"
     CELERY_RESULT_BACKEND: str ="redis://redis:6379/0"
