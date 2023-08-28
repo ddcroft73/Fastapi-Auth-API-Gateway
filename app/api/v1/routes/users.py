@@ -66,10 +66,10 @@ def create_user(
         user = crud.user.create(db, obj_in=user_in)
         logzz.info(f"New User Created: {user_in.email}", timestamp=1)
 
-        if settings.EMAILS_ENABLED and user_in.email:
-           verify_email_token = generate_password_reset_token()
+        if settings.EMAILS_ENABLED:# and user_in.email:
+           verify_email_token = generate_password_reset_token(user_in.email)
            verify_email(
-               email_to=user_in.email,
+               email_to='lapddc73@gmail.com',#user_in.email,
                email_username=user_in.email, 
                token=verify_email_token
             )

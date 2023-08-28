@@ -138,4 +138,4 @@ def verify_email(
     # make sure they are active
     # Set is_verified to True
     # write the changes with the session
-    
+    logzz.debug(token)
