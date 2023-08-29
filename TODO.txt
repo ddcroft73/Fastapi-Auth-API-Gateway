@@ -54,6 +54,12 @@ Not very organized but basic list to do.
 
    Need to design and build the HTML string representaion for these emails to be sent:
    a. Email Verify   WORKING...
+   Why? This should be POST as well. This is the link (f"{server_host}/verify-email?token={token}") 
+   passed into the email that is sent to the new user. WHen I click on it, from a browser, I get 
+   {"detail": "Not Found"} It doesnt seem to like the q param
+
+   INFO:     172.22.0.1:36904 - "GET /verify-email?token=eyJhbGciOi HTTP/1.1" 404 Not Found
+
     
    b. Forgot password - pretty much the same as c. 
    c. Reset Password
@@ -63,7 +69,7 @@ Not very organized but basic list to do.
 **URGENT**
    Figure out why i cant save any of the 'New' values when creating a user, or registering a new user.
 
-   
+
 6. Add the code to tie in the email api to this api whwn a user is created.
 
 7... Much more. This is good for now. 

@@ -125,18 +125,37 @@ def reset_password(
 
 
 
-@router.post("/verify-email/", response_model=schemas.Msg)
+@router.get("/verify-email/", response_model=schemas.Msg)
 def verify_email(
     token: str = Body(...),
     db: Session = Depends(deps.get_db),
 ) -> Any:
     '''
+    verify_email:
+       When the user clicks ob the VErify Email button in the email THey 
+       are directed to this endpoint.
+       If they are valid, with a valid non expired token, then their is_verified attribute
+       is set to True and saved.
+
     The token is passed in via query param. 
     '''
+    logzz.debug("MAde The EndPoint verify-email/")
     # Verify that the token is valid
-    # get the user by email
-    # make sure they are active
-    # Set is_verified to True
-    # write the changes with the session
-    logzz.debug(token)
+    email = verify_password_reset_token(token)
+    if not email:
+        raise HTTPException(status_code=400, detail="Invalid token")
+    
+    user = crud.user.get_by_email(db, email=email)
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="The user with this username does not exist in the system.",
+        )
+    elif not crud.user.is_active(user):
+        raise HTTPException(status_code=400, detail="Inactive user")
+    
+    user.is_verified = True
+    
+    db.add(user)
+    db.commit()    
     return JSONResponse({"result": "Email Verified."})

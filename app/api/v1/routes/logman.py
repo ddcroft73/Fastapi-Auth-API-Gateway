@@ -39,7 +39,8 @@ def manage_logs_archives(
         )
     
     sub_dirs: list[str] = 'info,error,debug,warn'.split(',')
-    status: str = f'{settings.LOG_ARCHIVE_DIRECTORY}/{command+"/" if command in sub_dirs else ""}  clear success. command: {command}'
+    status: str = f'{settings.LOG_ARCHIVE_DIRECTORY}/{command+"/" if command in sub_dirs else ""} '\
+                  f' clear success. command: {command}'
     cleared: str = 'done'
 
     try:

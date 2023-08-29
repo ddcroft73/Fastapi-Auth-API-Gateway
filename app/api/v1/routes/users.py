@@ -15,7 +15,10 @@ from sqlalchemy.orm import Session
 from app import crud, models, schemas
 from app.api import deps
 from app.core.config import settings
-from app.mail_utils import send_new_account_email, verify_email, generate_password_reset_token
+from app.mail_utils import (
+     verify_email, 
+     generate_password_reset_token
+)
 
 from app.utils.api_logger import logzz
 
@@ -64,7 +67,7 @@ def create_user(
     
     try:
         user = crud.user.create(db, obj_in=user_in)
-        logzz.info(f"New User Created: {user_in.email}, \nWooohooo! that's another 3.99 a month. -The Dream", timestamp=1)
+        logzz.info(f"New User Created: {user_in.email}, \nWooohooo! that's another $3.99 a month. -The Dream", timestamp=1)
 
         if settings.EMAILS_ENABLED:# and user_in.email:
            # Just use the same token generator... I'll rename it later.
@@ -76,7 +79,7 @@ def create_user(
             )
             
     except Exception as err:
-        logzz.error(f"Endpoint, create_user(): \n{str(err)} ")
+        logzz.error(f"Endpoint -> api/v1 - create_user(): \n{str(err)} ")
 
     return user
 
@@ -120,7 +123,7 @@ def update_user_me(
         user = crud.user.update(db, db_obj=current_user, obj_in=user_in)
 
     except Exception as err:
-        logzz.error(f"An error occured in 'update_user_me()': \n{str(err)}")
+        logzz.error(f"EndPoint -> api/v1/me 'update_user_me()': \n{str(err)}")
 
     return user
 

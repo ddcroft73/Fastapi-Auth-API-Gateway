@@ -57,7 +57,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
     EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 24
     VERIFY_EMAIL_EXPIRE_HOURS: int= 24
-    SERVER_HOST: str = 'http://localhost:8015'
+    SERVER_HOST: str = 'http://192.168.12.218:8015' #'http://localhost:8015'
     EMAIL_API_SERVER: str = 'http://192.168.12.218:8014'#f'http://{get_host_ip()}:8000' #'http://192.168.12.218:8014'   # Write a function to return this address
     EMAILS_ENABLED: bool = True
     EMAIL_FROM: EmailStr = 'ddc.dev.python@gmail.com'
