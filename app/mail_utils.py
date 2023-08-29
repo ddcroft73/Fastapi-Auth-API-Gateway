@@ -27,7 +27,7 @@ def send_email(email: schemas.Email, token: str) -> None:
     '''
     email_api_server = settings.EMAIL_API_SERVER
     url = f'{email_api_server}/api/v1/mail/send-email/'
-
+    logzz.debug(url)
     headers = {
         'Authorization': f'Bearer {token}',
         'Content-Type': 'application/json'
@@ -38,10 +38,8 @@ def send_email(email: schemas.Email, token: str) -> None:
             headers=headers, 
             json=email.dict()
         )
+    # Check the response to make sure all is well, If not log as error
     logzz.debug(f"Response from send_email() {response.json()}")
-
-def send_test_email(email_to: str) -> None:
-    pass
 
 def verify_email(email_to: str, email_username: str, token: str) -> None:
     '''
@@ -54,7 +52,6 @@ def verify_email(email_to: str, email_username: str, token: str) -> None:
     server_host = settings.SERVER_HOST
 
     link = f"{server_host}/verify-email?token={token}"
-    logzz.debug(f"Hit Verify_Email {link}")
     #
     # I need to send the user an email via the notif service with the abpve link
     # 

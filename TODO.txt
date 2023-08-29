@@ -53,12 +53,17 @@ Not very organized but basic list to do.
    I will create a new Email Object to be used to send email requests to the Notification API
 
    Need to design and build the HTML string representaion for these emails to be sent:
-   a. Email Verify
+   a. Email Verify   WORKING...
+    
    b. Forgot password - pretty much the same as c. 
    c. Reset Password
    d. Recover Password
 
 
+**URGENT**
+   Figure out why i cant save any of the 'New' values when creating a user, or registering a new user.
+
+   
 6. Add the code to tie in the email api to this api whwn a user is created.
 
 7... Much more. This is good for now. 

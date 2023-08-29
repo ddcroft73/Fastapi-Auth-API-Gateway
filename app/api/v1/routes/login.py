@@ -121,7 +121,7 @@ def reset_password(
 
     db.add(user)
     db.commit()
-    return JSONResponse({"msg": "Password updated successfully"})
+    return JSONResponse({"msg": "Password updated successfully."})
 
 
 
@@ -139,3 +139,4 @@ def verify_email(
     # Set is_verified to True
     # write the changes with the session
     logzz.debug(token)
+    return JSONResponse({"result": "Email Verified."})

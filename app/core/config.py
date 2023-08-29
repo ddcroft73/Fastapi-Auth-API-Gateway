@@ -2,7 +2,7 @@ import os
 from pydantic import BaseSettings
 from typing import Any, Dict, List, Optional, Union
 from pydantic import AnyHttpUrl, BaseSettings, EmailStr, HttpUrl, PostgresDsn, validator
-
+from app.utils.utils import get_host_ip
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -58,7 +58,7 @@ class Settings(BaseSettings):
     EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 24
     VERIFY_EMAIL_EXPIRE_HOURS: int= 24
     SERVER_HOST: str = 'http://localhost:8015'
-    EMAIL_API_SERVER: str = 'http://192.168.12.218:8014'   # Write a function to return this address
+    EMAIL_API_SERVER: str = 'http://192.168.12.218:8014'#f'http://{get_host_ip()}:8000' #'http://192.168.12.218:8014'   # Write a function to return this address
     EMAILS_ENABLED: bool = True
     EMAIL_FROM: EmailStr = 'ddc.dev.python@gmail.com'
     # This will be the link to get to the users DashBoard, or homepage

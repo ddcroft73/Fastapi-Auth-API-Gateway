@@ -64,18 +64,19 @@ def create_user(
     
     try:
         user = crud.user.create(db, obj_in=user_in)
-        logzz.info(f"New User Created: {user_in.email}", timestamp=1)
+        logzz.info(f"New User Created: {user_in.email}, \nWooohooo! that's another 3.99 a month. -The Dream", timestamp=1)
 
         if settings.EMAILS_ENABLED:# and user_in.email:
+           # Just use the same token generator... I'll rename it later.
            verify_email_token = generate_password_reset_token(user_in.email)
            verify_email(
-               email_to='lapddc73@gmail.com',#user_in.email,
+               email_to='lapddc73@gmail.com',# user_in.email, HARD COSED FOR testing
                email_username=user_in.email, 
                token=verify_email_token
             )
             
     except Exception as err:
-        logzz.error(f"There was an error in create_user(): \n{str(err)} ")
+        logzz.error(f"Endpoint, create_user(): \n{str(err)} ")
 
     return user
 
