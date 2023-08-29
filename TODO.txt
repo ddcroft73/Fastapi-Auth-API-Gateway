@@ -50,9 +50,12 @@ Not very organized but basic list to do.
 
    
 5. Design Emails:     branch add-email-support: Working...
-   I will create a new Email Object to be used to send email requests to the Notification API
+   I will create a new Email Object to be used to send email requests to the Notification API  DONE
 
-   Need to design and build the HTML string representaion for these emails to be sent:
+   Need to design and build the HTML string representaion for these emails to be sent:         DONE:
+      built a neat function that combines strings together with string literals and returns a string of HTML
+      to be sent as a webpage.
+      
    a. Email Verify   WORKING...
    Why? This should be POST as well. This is the link (f"{server_host}/verify-email?token={token}") 
    passed into the email that is sent to the new user. WHen I click on it, from a browser, I get 
@@ -60,10 +63,7 @@ Not very organized but basic list to do.
 
    INFO:     172.22.0.1:36904 - "GET /verify-email?token=eyJhbGciOi HTTP/1.1" 404 Not Found
 
-    
-   b. Forgot password - pretty much the same as c. 
-   c. Reset Password
-   d. Recover Password
+   b. Recover Password
 
 
 **URGENT**
