@@ -1,7 +1,14 @@
 from datetime import timedelta
 from typing import Any
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Request
+from fastapi import (
+    APIRouter, 
+    Body,
+    Depends,
+    HTTPException, 
+    Request, 
+    Query
+)
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -16,6 +23,7 @@ from app.mail_utils import (
     generate_password_reset_token,
     send_reset_password_email,
     verify_password_reset_token,
+    verify_emailVerify_token
 )
 
 router = APIRouter()
@@ -80,10 +88,8 @@ def recover_password(email: str, db: Session = Depends(deps.get_db)) -> Any:
         raise HTTPException(
             status_code=404,
             detail="The user with this username does not exist in the system.",
-        )
-    
+        )    
     password_reset_token = generate_password_reset_token(email=email)
-
     send_reset_password_email(
         email_to=user.email, email=email, token=password_reset_token
     )
@@ -94,7 +100,7 @@ def recover_password(email: str, db: Session = Depends(deps.get_db)) -> Any:
 #
 @router.post("/reset-password/", response_model=schemas.Msg)
 def reset_password(
-    token: str = Body(...),
+    token: str = Query(...),
     new_password: str = Body(...),
     db: Session = Depends(deps.get_db),
 ) -> Any:
@@ -121,27 +127,24 @@ def reset_password(
 
     db.add(user)
     db.commit()
-    return JSONResponse({"msg": "Password updated successfully."})
+    logzz.info(f'User: {email} changed password.', timestamp=True)
+    return JSONResponse({"result": "Password updated successfully."})
 
 
 
 @router.get("/verify-email/", response_model=schemas.Msg)
 def verify_email(
-    token: str = Body(...),
+    token: str = Query(...),
     db: Session = Depends(deps.get_db),
 ) -> Any:
     '''
-    verify_email:
-       When the user clicks ob the VErify Email button in the email THey 
-       are directed to this endpoint.
-       If they are valid, with a valid non expired token, then their is_verified attribute
-       is set to True and saved.
-
-    The token is passed in via query param. 
+      If all checks out, change is_verified to True.
+      Now... I need to figure ouot how to handle this.... Do I want to point the link to the frontend
+      instead of here, and have the FE query the BE like herer to verify? or... 
+      Do I want to keep it as is, and let this endpoint spawn a page that tells the user what happened,
+      and then let the user click a link to access the froint end to login?
     '''
-    logzz.debug("MAde The EndPoint verify-email/")
-    # Verify that the token is valid
-    email = verify_password_reset_token(token)
+    email =  verify_emailVerify_token(token)
     if not email:
         raise HTTPException(status_code=400, detail="Invalid token")
     
@@ -158,4 +161,5 @@ def verify_email(
     
     db.add(user)
     db.commit()    
-    return JSONResponse({"result": "Email Verified."})
+    logzz.info(f'Email verified for: {user.email}', timestamp=True)
+    return JSONResponse({"result": "Email Verified. User Ok to login"})

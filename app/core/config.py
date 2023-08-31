@@ -3,7 +3,6 @@ from pydantic import BaseSettings
 from typing import Any, Dict, List, Optional, Union
 from pydantic import AnyHttpUrl, BaseSettings, EmailStr, HttpUrl, PostgresDsn, validator
 from app.utils.utils import get_host_ip
-
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -25,7 +24,7 @@ class Settings(BaseSettings):
     DEFAULT_LOG_FILE: str = f"{LOG_DIRECTORY}/DEFAULT-app-logs.log"  # This where all log entries go If a destination is not specified.
     
     
-    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = ['http://localhost:3001'] # development
+    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = ['http://localhost:3001', 'http://localhost'] # development: FrontEnd
 
     @validator("BACKEND_CORS_ORIGINS", pre=True)
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:

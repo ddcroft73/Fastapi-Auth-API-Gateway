@@ -1,8 +1,7 @@
 .env
-snippets.txt
-scraps.txt
 logs
 .vscode
 app/tests/code_test.py
 logs/*.py
-alembic/versions/__pycache__
+alembic/versions/
+*.txt

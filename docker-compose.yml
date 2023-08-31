@@ -25,7 +25,7 @@ services:
   worker:
     build: 
       context: .  # On desktop, change the dockerfile to ./backend.dockerfile.
-      dockerfile: ./celery.dockerfile
+      dockerfile: ./backend.dockerfile
     command: celery --app background_tasks.tasks worker --loglevel=info --logfile=logs/celery.log
     volumes:
       - .:/app

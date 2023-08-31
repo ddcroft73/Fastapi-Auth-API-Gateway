@@ -17,7 +17,7 @@ from app.api import deps
 from app.core.config import settings
 from app.mail_utils import (
      verify_email, 
-     generate_password_reset_token
+     generate_verifyemail_token
 )
 
 from app.utils.api_logger import logzz
@@ -36,11 +36,7 @@ def read_users(
     """
     Retrieve users: 
     Pull out all users in the system and return.
-    """
-
-    temp = request.client 
-    logzz.info(temp)
-    
+    """    
     users = crud.user.get_multi(db, skip=skip, limit=limit)
     return users
 
@@ -69,11 +65,10 @@ def create_user(
         user = crud.user.create(db, obj_in=user_in)
         logzz.info(f"New User Created: {user_in.email}, \nWooohooo! that's another $3.99 a month. -The Dream", timestamp=1)
 
-        if settings.EMAILS_ENABLED:# and user_in.email:
-           # Just use the same token generator... I'll rename it later.
-           verify_email_token = generate_password_reset_token(user_in.email)
+        if settings.EMAILS_ENABLED and user_in.email:
+           verify_email_token = generate_verifyemail_token(user_in.email)
            verify_email(
-               email_to='lapddc73@gmail.com',# user_in.email, HARD COSED FOR testing
+               email_to='lapddc73@gmail.com',# user_in.email, HARD CODED FOR testing
                email_username=user_in.email, 
                token=verify_email_token
             )
@@ -233,3 +228,4 @@ def update_user(
     return user
 
 
+## Endpoint to look up user bt Email
