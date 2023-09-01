@@ -36,7 +36,7 @@ style = '''
 '''
 
 
-def build_template_verify(link: str) -> str:
+def build_template_verify(link: str, proj_name: str) -> str:
     verify_email_page: str = f'''
 <!DOCTYPE html>
 <html>
@@ -47,9 +47,9 @@ def build_template_verify(link: str) -> str:
 </head>
 <body>
   <div class="container">
-    <div class="title">Email Template</div>
-    <div class="text">This is the beginning of my verify email template.</div>
-    <a class="button" href="{link}" style="width: 100px; height: 100px;">Verify Email</a>
+    <div class="title">Thank you for using {proj_name}</div>
+    <div class="text">Please click the button below to verify your email. You have 24 hours to comply.</div>
+    <a class="button" href="{link}" style="width: 100px; height: 75px;">Verify Email</a>
   </div>
 </body>
 </html>

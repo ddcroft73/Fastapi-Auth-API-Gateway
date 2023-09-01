@@ -42,9 +42,9 @@ services:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: password  # Only for dev purposes. 
       POSTGRES_DB: users_database
-      POSTGRES_USER: deadMANsSwitch
+      POSTGRES_USER: deadMANsSwitch # Name has changed
     ports:
       - "5432:5432"
     volumes:

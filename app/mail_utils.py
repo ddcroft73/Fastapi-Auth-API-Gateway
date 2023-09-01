@@ -35,7 +35,7 @@ def verify_email(email_to: str, email_username: str, token: str) -> None:
     send user an email. They need to click the embedded link to verify
     '''
     project_name = settings.PROJECT_NAME
-    subject = f"{project_name} - Verify Email {email_username}"
+    subject = f"{project_name} - Verify Your Email - {email_username}"
     server_host = settings.SERVER_HOST
     #
     # Still deciding if I want this link to point to the FE, and then back to BE, or leave it

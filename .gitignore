@@ -6,3 +6,4 @@ app/tests/code_test.py
 logs/*.py
 alembic/versions/
 *.txt
+test.html
