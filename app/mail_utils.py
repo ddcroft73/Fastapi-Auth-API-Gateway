@@ -15,8 +15,8 @@ def send_email(email: schemas.Email, token: str) -> None:
     '''
     Sends a request to the Notification API, to send an Email
     '''
-    email_api_server = settings.EMAIL_API_SERVER
-    url = f'{email_api_server}/api/v1/mail/send-email/'
+    email_api_host = settings.EMAIL_API_HOST
+    url = f'{email_api_host}/api/v1/mail/send-email/'
     headers = {
         'Authorization': f'Bearer {token}',
         'Content-Type': 'application/json'
@@ -37,7 +37,10 @@ def verify_email(email_to: str, email_username: str, token: str) -> None:
     project_name = settings.PROJECT_NAME
     subject = f"{project_name} - Verify Email {email_username}"
     server_host = settings.SERVER_HOST
-
+    #
+    # Still deciding if I want this link to point to the FE, and then back to BE, or leave it
+    # and send the user from the BE then to the FE.
+    #
     link = f"{server_host}/api/v1/auth/verify-email?token={token}"
     verify_Email = schemas.Email(
         email_to=email_to,
@@ -51,9 +54,11 @@ def verify_email(email_to: str, email_username: str, token: str) -> None:
 def send_reset_password_email(email_to: str, email_username: str, token: str) -> None:
     project_name = settings.PROJECT_NAME
     subject = f"{project_name} - Password recovery for user {email_username}"
-    server_host = settings.SERVER_HOST
-
-    link = f"{server_host}/reset-password?token={token}"    
+    server_host = settings.SERVER_HOST    
+    #
+    # As with email Verify, Link HEre, Or FE???
+    #
+    link = f"{server_host}/api/v1/auth/reset-password?token={token}"    
     reset_password = schemas.Email(
         email_to=email_to,
         email_from=settings.EMAIL_FROM,
@@ -65,12 +70,19 @@ def send_reset_password_email(email_to: str, email_username: str, token: str) ->
     
 
 def generate_password_reset_token(email: EmailStr) -> str:
+    '''
+     ...this is pretty self explanatory
+    '''
     delta = timedelta(hours=settings.EMAIL_RESET_TOKEN_EXPIRE_HOURS)
     now = datetime.utcnow()
     expires = now + delta
     exp = expires.timestamp()
     encoded_jwt = jwt.encode(
-        {"exp": exp, "nbf": now, "email": email}, settings.API_KEY, algorithm="HS256",
+        {
+         "exp": exp, 
+         "nbf": now, 
+         "email": email 
+        }, settings.API_KEY, algorithm="HS256",
     )
     return encoded_jwt
 
@@ -82,7 +94,6 @@ def verify_password_reset_token(token: str) -> Optional[str]:
     except jwt.JWTError:
         return None
     
-
 def generate_verifyemail_token(email: EmailStr) -> str:
    return generate_password_reset_token(email)
 

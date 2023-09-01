@@ -49,7 +49,7 @@ Not very organized but basic list to do.
    Make revisions to the database with Alembic. I will consult AI on this just to make sure. 
 
    
-5. Design Emails:     branch add-email-support: Working...
+5. Design Emails:     
    I will create a new Email Object to be used to send email requests to the Notification API  DONE
 
    Need to design and build the HTML string representaion for these emails to be sent:         DONE:
@@ -57,20 +57,28 @@ Not very organized but basic list to do.
       to be sent as a webpage.
 
    a. Email Verify   WORKING... ALmost Done. will now verify email, 
-
-   INFO:     172.22.0.1:36904 - "GET /verify-email?token=eyJhbGciOi HTTP/1.1" 404 Not Found  FIXED. a path isue.
-   I'm now having issues with the token. The logger didnt seem to be logging the last run...
    b. Recover Password
 
+6. Add emaill support.     branch add-email-support: DONE
+   Make this API communicate with the notif API and write an endpoint to accept the link the user uses
+   to verify. DONE 
+
+   b. Add a static directory to house a couple small HTML files that the server can use to display
+      the results of a password reset, and email verify. Thes will contain a link to the FE
+      WORKING...
+   c. Start the API using a shell file. This will be done for development in order to obtain the Hosts
+      IP address. I can then inject this into the ENV variable to be used in mt settings to give 
+      the server an authenticate IP obtained dynamically.   DONE
 
 **URGENT**
    +Figure out why i cant save any of the 'New' values when creating a user, or registering a new user.
+     OK.... It will work if i send the data in with a dict, but not if I use and object...
+     It is likely that using react, JS, I'll be using the equivelent to a dict.
+     
    +Fix the permissions issue that just sprang up... what did i do!!!??? lol.. It seems now the user I created
      in the celery dockerfile, without sudo priveledges, to run the worker.. hasnt got permission to access the log
      ... celery.log. I tempjust went back to the same dockerfile as the webserver. 
-
-
-6. Add the code to tie in the email api to this api whwn a user is created. DONE
+   
 
 7... Much more. This is good for now. 
 *. Come up with a better way to secure my Internal API requests.

@@ -1,4 +1,5 @@
 .env
+auth-server.env
 logs
 .vscode
 app/tests/code_test.py

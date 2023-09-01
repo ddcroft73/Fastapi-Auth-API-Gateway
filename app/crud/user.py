@@ -28,8 +28,6 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             account_locked=obj_in.account_locked, # if obj_in.account_locked else False  
         )
 
-
-        logzz.debug(f'phone_number: {obj_in.phone_number}')
         db.add(db_obj)
         db.commit()
         db.refresh(db_obj)

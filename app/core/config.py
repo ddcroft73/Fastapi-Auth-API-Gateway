@@ -2,19 +2,17 @@ import os
 from pydantic import BaseSettings
 from typing import Any, Dict, List, Optional, Union
 from pydantic import AnyHttpUrl, BaseSettings, EmailStr, HttpUrl, PostgresDsn, validator
-from app.utils.utils import get_host_ip
-from dotenv import load_dotenv
-load_dotenv()
+
 
 class Settings(BaseSettings):
 
     API_V1_STR: str = "/api/v1"
     API_KEY: str = os.getenv("API_KEY")
 
-    PROJECT_NAME: str = 'Dead Mans Switch... PLUS!'
+    PROJECT_NAME: str = 'Life\After Life Package'
 
-    CELERY_BROKER_URL: str ="redis://redis:6379/0"
-    CELERY_RESULT_BACKEND: str ="redis://redis:6379/0"
+    CELERY_BROKER_URL: str = os.getenv('CELERY_BROKER_URL') #"redis://redis:6379/0"
+    CELERY_RESULT_BACKEND: str = os.getenv('CELERY_RESULT_BACKEND') #"redis://redis:6379/0"
 
     FIRST_SUPERUSER: EmailStr = os.getenv("FIRST_SUPERUSER")
     FIRST_SUPERUSER_PASSWORD: str = os.getenv("FIRST_SUPERUSER_PASSWORD")
@@ -56,16 +54,22 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
     EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 24
     VERIFY_EMAIL_EXPIRE_HOURS: int= 24
-    SERVER_HOST: str = 'http://192.168.12.218:8015' #'http://localhost:8015'
-    EMAIL_API_SERVER: str = 'http://192.168.12.218:8014'#f'http://{get_host_ip()}:8000' #'http://192.168.12.218:8014'   # Write a function to return this address
+    #
+    # FOR DEVELOPMENT ONLY:
+    #   The IP Address of the machine is picked up dynamically before the stack starts. Since the services are all in docker
+    #   containers, I need the actual machine IP Address to be able to send requests to the email service, or any other
+    #   service on the dev machine. localhost would work fine for this service. but not for others I need to contact. 
+    #   I had a couple other choice, Dedicated Docker Network, or add all services to the same docker-compose file, but 
+    #   this approach seems easy enough. 
+    #
+    SERVER_HOST: str = f"http://{os.getenv('HOST_IP_ADDRESS')}:8015"  #'http://192.168.12.218:8015' 
+    EMAIL_API_HOST: str = f"http://{os.getenv('HOST_IP_ADDRESS')}:8014" #'http://192.168.12.218:8014'
+    
     EMAILS_ENABLED: bool = True
-    EMAIL_FROM: EmailStr = 'ddc.dev.python@gmail.com'
-    # This will be the link to get to the users DashBoard, or homepage
-    VERIFY_EMAIL_LINK: AnyHttpUrl = None
+    EMAIL_FROM: EmailStr = 'ddc.dev.python@gmail.com' # until I get a domain (decide on a name), and an email service with the same name
     USERS_OPEN_REGISTRATION: bool = False
 
     class Config:
-        env_file = "../.env"
-
+        env_file = "../auth-server.env"
 
 settings = Settings()
