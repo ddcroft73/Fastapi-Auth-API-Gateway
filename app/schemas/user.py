@@ -2,21 +2,13 @@
 from typing import Optional
 from pydantic import BaseModel, EmailStr
 
-# Will need to ammend the schema....add()
-# 
-# phone_number
-# is_verified: 
-# failed_attempts
-# account_locked
-#   
-
 # Shared properties
 class UserBase(BaseModel):
     email: Optional[EmailStr] = None
     is_active: Optional[bool] = True
     is_superuser: bool = False
     full_name: Optional[str] = None
-    # New Fields
+    # New Fields since creatioin
     phone_number: Optional[str] = None
     is_verified: Optional[bool] = False
     failed_attempts: Optional[int] = 0

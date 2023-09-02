@@ -8,13 +8,14 @@ services:
       dockerfile: ./backend.dockerfile
     ports:
       - 8015:8000
-    command: uvicorn app.main:app --host 0.0.0.0 --reload
+    command: uvicorn app.main:app --host 0.0.0.0 
     volumes:
       - .:/app
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - TZ=US/Eastern
+      - HOST_IP_ADDRESS=${HOST_IP_ADDRESS}
     depends_on:
       - redis
       - db
@@ -25,7 +26,7 @@ services:
   worker:
     build: 
       context: .  # On desktop, change the dockerfile to ./backend.dockerfile.
-      dockerfile: ./celery.dockerfile
+      dockerfile: ./backend.dockerfile
     command: celery --app background_tasks.tasks worker --loglevel=info --logfile=logs/celery.log
     volumes:
       - .:/app
@@ -41,9 +42,9 @@ services:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: password  # Only for dev purposes. 
       POSTGRES_DB: users_database
-      POSTGRES_USER: deadMANsSwitch
+      POSTGRES_USER: deadMANsSwitch # Name has changed
     ports:
       - "5432:5432"
     volumes:

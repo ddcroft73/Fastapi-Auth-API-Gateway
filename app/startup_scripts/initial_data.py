@@ -2,7 +2,7 @@ import logging
 
 from app.database.init_db import init_db
 from app.database.session import SessionLocal
-from app.utils.logger import logzz
+from app.utils.api_logger import logzz
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

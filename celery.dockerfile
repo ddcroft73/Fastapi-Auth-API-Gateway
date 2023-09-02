@@ -22,7 +22,13 @@ COPY . .
 # Need to create a user without superuser priveledges to run celery, hence a seperate 
 # dockerfilez and dedicated user.
 RUN useradd -m celery_user
-RUN chown -R celery_user:celery_user /app
 
+# NOTE: When using this file, I can;t get permission to celery.log. I created a user without su priveledges
+# that used to work perfetly, now it says
+# PermissionError: [Errno 13] Permission denied: '/app/logs/celery.log' Need to figure out what has chcnged.
+# Meantime, use backend.dockerfile and run celery with su priveledges
+
+RUN chown -R celery_user:celery_user /app
+RUN chown -R celery_user:celery_user /app/logs/celery.log
 USER celery_user
 

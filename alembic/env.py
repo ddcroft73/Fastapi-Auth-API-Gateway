@@ -6,7 +6,7 @@ import os
 from alembic import context
 
 from app.database.base import Base  # noqa
-from app.utils.logger import logzz
+from app.utils.api_logger import logzz
 from dotenv import load_dotenv
 
 load_dotenv()

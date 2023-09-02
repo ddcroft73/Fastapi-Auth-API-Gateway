@@ -15,9 +15,12 @@ from sqlalchemy.orm import Session
 from app import crud, models, schemas
 from app.api import deps
 from app.core.config import settings
-from app.mail_utils import send_new_account_email
+from app.mail_utils import (
+     verify_email, 
+     generate_verifyemail_token
+)
 
-from app.utils.logger import logzz
+from app.utils.api_logger import logzz
 
 router = APIRouter()
 
@@ -33,11 +36,7 @@ def read_users(
     """
     Retrieve users: 
     Pull out all users in the system and return.
-    """
-
-    temp = request.client 
-    logzz.info(temp)
-    
+    """    
     users = crud.user.get_multi(db, skip=skip, limit=limit)
     return users
 
@@ -64,12 +63,18 @@ def create_user(
     
     try:
         user = crud.user.create(db, obj_in=user_in)
+        logzz.info(f"New User Created: {user_in.email}, \nWooohooo! that's another $3.99 a month. -The Dream", timestamp=1)
+
         if settings.EMAILS_ENABLED and user_in.email:
-            send_new_account_email(
-                email_to=user_in.email, username=user_in.email, password=user_in.password
+           verify_email_token = generate_verifyemail_token(user_in.email)
+           verify_email(
+               email_to='lapddc73@gmail.com',# user_in.email, HARD CODED FOR testing
+               email_username=user_in.email, 
+               token=verify_email_token
             )
+            
     except Exception as err:
-        logzz.error(f"There was an error in create_user(): \n{str(err)} ")
+        logzz.error(f"Endpoint -> api/v1 - create_user(): \n{str(err)} ")
 
     return user
 
@@ -113,7 +118,7 @@ def update_user_me(
         user = crud.user.update(db, db_obj=current_user, obj_in=user_in)
 
     except Exception as err:
-        logzz.error(f"An error occured in 'update_user_me()': \n{str(err)}")
+        logzz.error(f"EndPoint -> api/v1/me 'update_user_me()': \n{str(err)}")
 
     return user
 
@@ -223,3 +228,4 @@ def update_user(
     return user
 
 
+## Endpoint to look up user bt Email

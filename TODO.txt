@@ -1,6 +1,6 @@
 Not very organized but basic list to do.
 
-1. Add new fields to the User table   DONE
+1. Add new fields to the User table   DONE  branch add-user-fields DONE
 2. Implement the logic for the fields
   - failed_attempts (coed to count and timer for the max inputs)
   - account_locked (Dependency? Or just check it at every endpoint?)
@@ -8,52 +8,108 @@ Not very organized but basic list to do.
 
 3. Work on the logger. Maybe add a logger that is dedicated to logins, and other inportant actions.  DONE
 
-4. ADD A new table 'Accounts' 
-   "So when a user is created, by default an account for that user is also created." Whena user updates their
+4. ADD A new table 'Accounts'     branch add-account-table: Working...
+   "So when a user is created, by default an account for that user is also created." When a user updates their
    account info, and user info, this will still be handled by the user/update endpoint. I'll need to add
-   schema for the account data to be sent in as well, and just do theaccount update with the schema passed in
+   schema for the account data to be sent in as well, and just do the account update with the schema passed in
    after the user update. if any attributes have been changed in the account update object, it will be updated.
-   simple enough.
+   and if no account changes were made, nothing changes. I feel like the DB operations can be donoe by celery? The biggest delay
+   after a change is inited will be a few seconds at most, so I think this will be the way to go. 
+
    a. model
    b. schema
-   c. intergrat3e CRUD class for DB operations
+   c. intergrate CRUDAccount class for DB operations
+   d. revision DB
 
    Account Fields;
-   user_unique_id: str ['THis is a unique identifier that will be shared between this DB and the ClockAPI DB' (Not written yet)]
-   account_creation_date: str
-   account_last_update: str
+   user_unique_id: str 'THis is a unique identifier that will be shared between this DB and the ClockAPI DB' (Not written yet)
+                        I will use my uuid() function to get the ID. 
+   account_creation_date: str "The date the account was created."
+   account_last_update: str "The last time the account was altered."
    subscription_type: str = 'free'  ['free', 'basic', 'premium']
-   subscription_start_date: str
-   subscription_end_date: str
-   last_login_date: str
-   bill_renew_date: str
-   auto_renewal: bool
-   account_status: str = 'active' ['active', 'paused', 'cancelled', 'fullfilled']
-   account_status_reason: str = None
-   cancellation_date: str = None
-   cancellation_reason: str = None
-   preffered_contact_method: str = 'email' ['email', 'sms']
+   subscription_start_date: str 'THe date the subscription was started. This may be the time the account was created, and it may 
+                                 be the last time the user changed the sub type. (ex. free to paid)'
+   subscription_end_date: str   'The date the sub ended.'
+   last_login_date: str         
+   bill_renew_date: str "When is the bill due?"
+   auto_renewal: bool=False 
+   account_status: str = 'active' ['active', 'paused', 'cancelled', 'fullfilled'] "The users will be allowed to pause"
+   account_status_reason: str = None "A place to enter why an account status is, or has changed"
+   cancellation_date: str = None   ""
+   cancellation_reason: str = None "An account can be cancelled explixitly, or after services have been rendered. Once a FinalShare
+                                    Pacakage has been deployed, It is assumed that the user hasa died. In this case the account will 
+                                    be cancelled, and this will be noted here. The user will not be allowed back without authorization.
+                                    There, could be a mistake and if so the user will be locked out until authorization."
+   preffered_contact_method: str = 'email' ['email', 'sms'] "The app will need to contact each user when it is about time for them to
+                                                             check in. Each method will have a link to do this. There may also be other 
+                                                             reasons to contact."
    timezone: str
 
-   I need to think abouot how to set up the schema. What data do I want to be returned via api?
+   I need to think about how to set up the schema. What data do I want to be returned via api?
+   Make revisions to the database with Alembic. I will consult AI on this just to make sure. 
 
+   
+5. Design Emails:     
+   I will create a new Email Object to be used to send email requests to the Notification API  DONE
 
-5. Design Emails:
-   a. Email Verify
-   b. Forgot username
-   c. Forgot password
-6. Add the code to tie in the email api to this api whwn a user is created.
+   Need to design and build the HTML string representaion for these emails to be sent:         DONE:
+      built a neat function that combines strings together with string literals and returns a string of HTML
+      to be sent as a webpage.
+
+   a. Email Verify   WORKING... ALmost Done. will now verify email, 
+   b. Recover Password
+
+6. Add emaill support.     branch add-email-support: DONE
+   Make this API communicate with the notif API and write an endpoint to accept the link the user uses
+   to verify. DONE 
+
+   b. Add a static directory to house a couple small HTML files that the server can use to display
+      the results of a password reset, and email verify. Thes will contain a link to the FE
+      WORKING...
+   c. Start the API using a shell file. This will be done for development in order to obtain the Hosts
+      IP address. I can then inject this into the ENV variable to be used in mt settings to give 
+      the server an authenticate IP obtained dynamically.   DONE
+
+**URGENT**
+   +Figure out why i cant save any of the 'New' values when creating a user, or registering a new user.
+     OK.... It will work if i send the data in with a dict, but not if I use and object...
+     It is likely that using react, JS, I'll be using the equivelent to a dict.
+     
+   +Fix the permissions issue that just sprang up... what did i do!!!??? lol.. It seems now the user I created
+     in the celery dockerfile, without sudo priveledges, to run the worker.. hasnt got permission to access the log
+     ... celery.log. I tempjust went back to the same dockerfile as the webserver. 
+   
 
 7... Much more. This is good for now. 
+*. Come up with a better way to secure my Internal API requests.
+NOTES:
+Also need to finish the Email Service. Stop jumping from one thinh to the next!!
 
-Also need to finish the Email Service. 
+Need to add in the SMS service to the email service. So, this will now make the "Email Service" the  "Notiifcation Service"
+(This is easy enough. Do I want to use an SMS service, or do I want to just use my SMS via email code? I'll need to use an API 
+to lookup the users carrier by phone... It will be cheesy that way. Lets just find a decent SMS API service.)
 
-Need to add in the SMS service to the email service. (This is easy enough. Do I want to use an SMS service, or do I want to just use my
-my SMS via email code? I'll need to use an API to lookup the users carrier by phone... It will be cheesy that way. Letsjust find a 
-decent SMS API service.)
 
-Need to build the SocialMedia Service.
+Need to build the SocialMedia Service. This should be rather straight forward. All it needs to do is login, make a post, logout.
 
+ISSUES:
+
+How much will it cost to run this app? I will need seperate accounts to run each service... I think. I have not done a lot 
+of research on this, I'm just building services in docker containers using docker-compose, but from what I have learned thus far 
+I can use the free tier and I will be billed according to traffic. 
+I Have: 
+   1. 3 services for the backend. Not huge... 
+   2. Docker Swarm Rocks is what I have been looking into. Start with a "cluster" of a single server, and move up when needed.
+   3. 1 front end application. 
+   
+   At present I have an account with w3schools spaces. Man, I have no idea why I bought that. It looks
+   like a space to serve toys, but I could be totally wrong. Tech support is non exeistent. I WILL Cancel this shit before 
+   it's due again. But waiting 2 weeks for a fucking reply, that never even happens is bullshit. I could use GitHub pages 
+   to serve the front end and access React using a damn CDN. (Im joking!)  
+
+Domain: 
+I have got to buy mu domain. I still don't knowwhat to call this app. And WHen I do I have a very vague idea of how to  set all that 
+up. I will absolutely use AI to help with that.
 
 
   
