@@ -68,7 +68,7 @@ def create_user(
         if settings.EMAILS_ENABLED and user_in.email:
            verify_email_token = generate_verifyemail_token(user_in.email)
            verify_email(
-               email_to='gen.disarray73@outlook.com',# user_in.email, HARD CODED FOR testing
+               email_to='lapddc73@gmail.com',# user_in.email, HARD CODED FOR testing
                email_username=user_in.email, 
                token=verify_email_token
             )
