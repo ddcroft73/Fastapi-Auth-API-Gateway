@@ -30,6 +30,7 @@ def send_email(email: schemas.Email, token: str) -> None:
     # Check the response to make sure all is well, If not log as error
     logzz.debug(f"Response from send_email() {response.json()}")
 
+
 def verify_email(email_to: str, email_username: str, token: str) -> None:
     '''
     send user an email. They need to click the embedded link to verify
@@ -42,11 +43,13 @@ def verify_email(email_to: str, email_username: str, token: str) -> None:
     # and send the user from the BE then to the FE.
     #
     link = f"{server_host}/api/v1/auth/verify-email?token={token}"
+    # resend_link = f'{server_host}/api/v1/auth/resend-verification?email={email_username}'
+    
     verify_Email = schemas.Email(
         email_to=email_to,
         email_from=settings.EMAIL_FROM,
         subject=subject,
-        message=build_template_verify(link), # This is the HTML for the message
+        message=build_template_verify(link, project_name), # This is the HTML for the message
         user_id=email_username
     )
     send_email(verify_Email, token)
@@ -63,7 +66,7 @@ def send_reset_password_email(email_to: str, email_username: str, token: str) ->
         email_to=email_to,
         email_from=settings.EMAIL_FROM,
         subject=subject,
-        message=build_template_reset(link), # This is the HTML for the message
+        message=build_template_reset(link, project_name), # This is the HTML for the message
         user_id=email_username
     )     
     send_email(reset_password, token)

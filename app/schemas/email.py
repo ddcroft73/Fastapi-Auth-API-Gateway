@@ -15,3 +15,6 @@ class MailResponse(BaseModel):
 
 class BasicResponse(BaseModel):
     result: str    
+
+class ResendVerification(BaseModel):
+    email: EmailStr    

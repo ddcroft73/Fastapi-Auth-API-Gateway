@@ -62,8 +62,8 @@ class Settings(BaseSettings):
     #   I had a couple other choice, Dedicated Docker Network, or add all services to the same docker-compose file, but 
     #   this approach seems easy enough. 
     #
-    SERVER_HOST: str = f"http://{os.getenv('HOST_IP_ADDRESS')}:8015"  
-    EMAIL_API_HOST: str = f"http://{os.getenv('HOST_IP_ADDRESS')}:8014" 
+    SERVER_HOST: str = f"http://localhost:8015"  
+    EMAIL_API_HOST: str = f"http://{os.getenv('HOST_IP_ADDRESS')}:8014" #/192.168.12.130
     
     EMAILS_ENABLED: bool = True
     EMAIL_FROM: EmailStr = 'ddc.dev.python@gmail.com' # until I get a domain (decide on a name), and an email service with the same name

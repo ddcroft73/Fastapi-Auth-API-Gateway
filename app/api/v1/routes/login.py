@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 
 
 from sqlalchemy.orm import Session
-
+from pydantic.networks import EmailStr
 from app import crud, models, schemas
 from app.api import deps
 from app.core import security
@@ -25,7 +25,9 @@ from app.mail_utils import (
     generate_password_reset_token,
     send_reset_password_email,
     verify_password_reset_token,
-    verify_emailVerify_token
+    verify_emailVerify_token,
+    generate_verifyemail_token,
+    verify_email
 )
 
 router = APIRouter()
@@ -165,3 +167,16 @@ def verify_email(
     db.commit()    
     logzz.info(f'Email verified for: {user.email}', timestamp=True)
     return JSONResponse({"result": "Email Verified. User Ok to login"})
+
+
+@router.get("/resend-verification/", response_model=schemas.Msg)
+def resend_verification(email: EmailStr = Query(...)):
+    # Create a new token and send out
+    email_token = generate_verifyemail_token(email)
+    verify_email(
+        email_to='gen.disarray73@outlook.com',  # user_in.email, HARD CODED FOR testing
+        email_username=email,
+        token=email_token
+    )
+    logzz.info(f'User: {email} was sent another verify email token.', timestamp=True)
+    
