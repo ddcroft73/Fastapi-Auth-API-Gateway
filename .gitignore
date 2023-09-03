@@ -2,8 +2,5 @@
 auth-server.env
 logs
 .vscode
-app/tests/code_test.py
-logs/*.py
 alembic/versions/__pycache__
-*.txt
 test.html
