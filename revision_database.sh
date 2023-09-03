@@ -19,7 +19,7 @@ if docker-compose ps | grep -q Up; then
     docker-compose exec web alembic upgrade head
     echo "Migrations complete."
     sleep 3
-    #docker-compose exec web python /app/app/startup_scripts/initial_data.py
+    docker-compose exec web python /app/app/startup_scripts/initial_data.py
 else
     echo "Docker Compose services are not running."
 fi

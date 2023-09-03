@@ -79,6 +79,14 @@ Not very organized but basic list to do.
      in the celery dockerfile, without sudo priveledges, to run the worker.. hasnt got permission to access the log
      ... celery.log. I tempjust went back to the same dockerfile as the webserver. 
    
+7. Add A unique User ID to the users attributes, variables, properties... whatever.  
+   I need something besides the 'id' given by the database. Since I am going to have at least one more DB, in at least one more
+   API, I am going to need the user to have a foolproof way to connect all the users data together. Foolroof may be a bit ambitious but
+   I'm hoping for the best. 
+   1. Add a new var to the user class in schema to rep the uuid.
+   2 Update the model
+   3 update
+
 
 7... Much more. This is good for now. 
 *. Come up with a better way to secure my Internal API requests.

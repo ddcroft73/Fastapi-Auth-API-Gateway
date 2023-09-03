@@ -1,6 +1,7 @@
 
 from typing import Optional
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
+import uuid
 
 # Shared properties
 class UserBase(BaseModel):
@@ -19,7 +20,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     email: EmailStr
     password: str
-
+    user_uuid: uuid.UUID = Field(default_factory=uuid.uuid4)
 
 # Properties to receive via API on update
 class UserUpdate(UserBase):
@@ -28,6 +29,7 @@ class UserUpdate(UserBase):
 
 class UserInDBBase(UserBase):
     id: Optional[int] = None
+    user_uuid: uuid.UUID  # All users have a uuid, but its unchangeable.
 
     class Config:
         orm_mode = True

@@ -26,6 +26,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             is_verified=obj_in.is_verified, # if obj_in.is_verified else False,
             failed_attempts=obj_in.failed_attempts, # if obj_in.failed_attempts else 0,
             account_locked=obj_in.account_locked, # if obj_in.account_locked else False  
+            user_uuid=obj_in.user_uuid
         )
 
         db.add(db_obj)
