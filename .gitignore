@@ -4,6 +4,6 @@ logs
 .vscode
 app/tests/code_test.py
 logs/*.py
-alembic/versions/
+alembic/versions/__pycache__
 *.txt
 test.html
