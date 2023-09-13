@@ -1,0 +1,12 @@
+
+I need to add a new table to an existing Databas in my fastAPI app. I am very early in the development stage, so the current data is irrelevant and it can be deleted. As of now I have one 
+table. The "user" table. I want to add an "Account" table as well. This table will be responsible for all the data I need for each user to have an accouint on my system.  I am using PostgresSQL
+15 and I am going tosupply you all the information I think you need and I need you to give me the caode and instruction on how to make this happen. 
+
+The fields in the Accoiunt Table:
+    account_creation_date: str
+    account_last_update: str
+    subscription_type: str
+    subscription_start_date: str
+    subscription_end_date: str
+    last_login_date: str
