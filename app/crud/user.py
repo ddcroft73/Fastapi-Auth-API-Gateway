@@ -68,5 +68,15 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
 
     def is_superuser(self, user: User) -> bool:
         return user.is_superuser
-
+    
+    def user_is_verified(self, user: User) -> bool:
+        return user.is_verified
+    
+    def user_phone_number(self, user: User) -> str:
+        return user.phone_number
+    
+    def is_account_locked(self, user: User) -> bool:
+        return user.account_locked
+    
+    
 user = CRUDUser(User)

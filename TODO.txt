@@ -22,8 +22,6 @@ Not very organized but basic list to do.
    d. revision DB
 
    Account Fields;
-   user_unique_id: str 'THis is a unique identifier that will be shared between this DB and the ClockAPI DB' (Not written yet)
-                        I will use my uuid() function to get the ID. 
    account_creation_date: str "The date the account was created."
    account_last_update: str "The last time the account was altered."
    subscription_type: str = 'free'  ['free', 'basic', 'premium']
@@ -47,8 +45,23 @@ Not very organized but basic list to do.
 
    I need to think about how to set up the schema. What data do I want to be returned via api?
    Make revisions to the database with Alembic. I will consult AI on this just to make sure. 
-
    
+   9\13\2023
+   * add PIN to 'user' table. this PIN will only be used by Admin. It will be hashed just like the password. Its exeistence should 
+     be unknown to anyone using the app. and it can be blank, so it's optional. WHenever a new superuseris created then 
+     the PIN will be set up.
+   NEED to adjust:
+     a. schema - It should be updateable, but it is not reqiired. 
+     b. model
+     c. update CRUDUser
+     d. Make a new revision. 
+
+   * Add an "Account" table to the DataBAse.
+     I will have to wipe the ebtire DB, no big deal.. After I finally get the DB how I want it, I am going to create one
+     Revision file that does all these at once, to a blank DB.
+
+     
+
 5. Design Emails:     
    I will create a new Email Object to be used to send email requests to the Notification API  DONE
 
@@ -85,7 +98,7 @@ Not very organized but basic list to do.
    I'm hoping for the best. 
    1. Add a new var to the user class in schema to rep the uuid.
    2 Update the model
-   3 update
+   3 update   DONE
 
 
 7... Much more. This is good for now. 

@@ -50,6 +50,8 @@ def login_access_token(
     client_host = request.client.host
     logzz.login(f'{client_host}  logged in @: ', timestamp=1)    
 
+    user_role: str
+
     user = crud.user.authenticate(
         db, email=form_data.username, password=form_data.password
     )
@@ -60,12 +62,19 @@ def login_access_token(
         raise HTTPException(status_code=400, detail="Inactive user")
     
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    
+    # Decide if this is a super_user or a normal user and attach it to the response
+    if crud.user.is_superuser(user):
+         user_role ='admin'
+    else:
+        user_role = 'user'
 
     return JSONResponse({
         "access_token": security.create_access_token(
-            user.id, expires_delta=access_token_expires
+            user.id, user_role, expires_delta=access_token_expires
         ),
         "token_type": "bearer",
+        "user_role": user_role
     })
 #
 #/api/v1/auth/login/test-token

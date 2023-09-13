@@ -51,9 +51,11 @@ class Settings(BaseSettings):
             path=f"/{values.get('POSTGRES_DB') or ''}",
         )
 
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 # 7 days
     EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 24
     VERIFY_EMAIL_EXPIRE_HOURS: int= 24
+    ADMIN_TOKEN_EXPIRE_TIME_MINUTES: int = 10
+
     #
     # FOR DEVELOPMENT ONLY:
     #   The IP Address of the machine is picked up dynamically before the stack starts. Since the services are all in docker
@@ -63,11 +65,14 @@ class Settings(BaseSettings):
     #   this approach seems easy enough. 
     #
     SERVER_HOST: str = f"http://localhost:8015"  
-    EMAIL_API_HOST: str = f"http://{os.getenv('HOST_IP_ADDRESS')}:8014" #/192.168.12.130
+    EMAIL_API_HOST: str = f"http://{os.getenv('HOST_IP_ADDRESS')}:8014" #/192.168.12.130 This is dynamic, hence the code. 
     
     EMAILS_ENABLED: bool = True
     EMAIL_FROM: EmailStr = 'ddc.dev.python@gmail.com' # until I get a domain (decide on a name), and an email service with the same name
     USERS_OPEN_REGISTRATION: bool = False
+    # This data is added to the API_KEY in order to create the Admin Token. This ensures that the Admin token is totally
+    # diffferent than a normal "user" token that is issued with succesful login. 
+    ADMIN_API_KEY: str = 'HDG673L2MNDUI76E'
 
     class Config:
         env_file = "../auth-server.env"
