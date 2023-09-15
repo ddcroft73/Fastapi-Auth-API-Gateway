@@ -7,7 +7,10 @@ from pydantic import BaseModel, EmailStr, Field, validator
 from datetime import datetime
 
 # Shared properties
+
+
 class AccountBase(BaseModel):
+    user_id: int   # Add this line
     account_creation_date: Optional[datetime]      #
     subscription_type: str = 'free'    #
     last_login_date: Optional[datetime]
@@ -62,6 +65,7 @@ class AccountBase(BaseModel):
 
 
 class AccountCreate(AccountBase):
+    user_id: int
     admin_PIN: Optional[str]  # should be optional because will only be used by the admins
 
 # Properties to receive via API on update

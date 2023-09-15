@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from app import crud, schemas
+from app import crud, schemas, models
 from app.core.config import settings
 from app.database import base  
 from datetime import datetime
@@ -17,7 +17,10 @@ def init_db(db: Session) -> None:
             full_name="Danny D.C.",            
             is_superuser=True
         )
+        user: models.User = crud.user.create( db, obj_in=user_in) 
+        
         account_in = schemas.AccountCreate(
+            user_id=user.id,
             account_creation_date=formatted_date_today,
             last_login_date=formatted_date_today,
             bill_renew_date=formatted_date_today,
@@ -25,6 +28,5 @@ def init_db(db: Session) -> None:
             account_last_update_date=formatted_date_today,
             admin_PIN="112233", # Change this if keeping this account
             timezone='Eastern'
-        )
-        user: schemas.User = crud.user.create(db, obj_in=user_in)  # noqa: F841
-        account: schemas.Account = crud.account.create(db, obj_in=account_in)
+        )        
+        account: models.Account = crud.account.create(db, obj_in=account_in)

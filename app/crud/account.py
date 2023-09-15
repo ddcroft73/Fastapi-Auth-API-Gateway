@@ -22,6 +22,7 @@ class CRUDAccount(CRUDBase[Account, AccountCreate, AccountUpdate]):
         
     def create(self, db: Session, *, obj_in: AccountCreate) -> Account:
         db_obj = Account(
+            user_id=obj_in.user_id,
             account_creation_date=obj_in.account_creation_date,
             hashed_admin_PIN=get_password_hash(obj_in.admin_PIN),
             account_last_update_date=obj_in.account_last_update_date,
