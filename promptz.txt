@@ -1,12 +1,113 @@
 
-I need to add a new table to an existing Databas in my fastAPI app. I am very early in the development stage, so the current data is irrelevant and it can be deleted. As of now I have one 
-table. The "user" table. I want to add an "Account" table as well. This table will be responsible for all the data I need for each user to have an accouint on my system.  I am using PostgresSQL
-15 and I am going tosupply you all the information I think you need and I need you to give me the caode and instruction on how to make this happen. 
+Herre is all that info.. 
 
-The fields in the Accoiunt Table:
-    account_creation_date: str
-    account_last_update: str
-    subscription_type: str
-    subscription_start_date: str
-    subscription_end_date: str
-    last_login_date: str
+
+class Account(Base):
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('user.id'))  # Note the lowercase 'user'
+
+    # Can be blank for non-admin users
+    hashed_admin_PIN = Column(String, nullable=True)  # This unlike the pasword can be empty.
+    account_creation_date = Column(DateTime(timezone=True), server_default=func.now())
+    account_last_update_date = Column(DateTime(timezone=True), server_default=func.now())
+    last_account_changes_date = Column(DateTime(timezone=True), server_default=func.now())
+    subscription_type = Column(String, default='free')  # Defaulted to 'free'
+    last_login_date = Column(DateTime(timezone=True), nullable=True)
+    bill_renew_date = Column(DateTime(timezone=True), nullable=True)
+    auto_renewal = Column(Boolean, default=False)
+    account_status_reason = Column(String, nullable=True)
+    cancellation_date = Column(DateTime(timezone=True), nullable=True)
+    cancellation_reason = Column(String, nullable=True)
+    preferred_contact_method = Column(String, default='email')
+    timezone = Column(String, nullable=False)  
+
+    user = relationship("User", back_populates="account")
+
+
+
+class User(Base):
+    id = Column(Integer, primary_key=True, index=True)
+    user_uuid = Column(UUID(as_uuid=True), unique=True, index=True, nullable=False)  
+    full_name = Column(String, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    is_active = Column(Boolean(), default=True)
+    is_superuser = Column(Boolean(), default=False)
+    phone_number = Column(String, unique=False, index=True, nullable=True) 
+    is_verified = Column(Boolean(), default=False)
+    failed_attempts = Column(Integer, default=0)
+    account_locked = Column(Boolean(), default=False)
+
+    account = relationship("Account", uselist=False, back_populates="user")
+
+
+
+def upgrade() -> None:
+    op.create_table(
+        "user",
+        sa.Column("id", sa.Integer(), primary_key=True, nullable=False),
+        sa.Column('user_uuid', postgresql.UUID( as_uuid=True), unique=True, nullable=False),
+        sa.Column("full_name", sa.String(), nullable=True),
+        sa.Column("email", sa.String(), nullable=True, unique=True),
+        sa.Column("hashed_password", sa.String(), nullable=True),
+        sa.Column("is_active", sa.Boolean(), nullable=True, default=True),
+        sa.Column("is_superuser", sa.Boolean(), nullable=True, default=False),
+        sa.Column("phone_number", sa.String(), unique=False, nullable=True),
+        sa.Column("is_verified", sa.Boolean(), default=False),
+        sa.Column("failed_attempts", sa.Integer(), default=0),
+        sa.Column("account_locked", sa.Boolean(), default=False),
+    )
+    op.create_index(op.f("ix_user_email"), "user", ["email"], unique=True)
+    op.create_index(op.f("ix_user_full_name"), "user", ["full_name"], unique=False)
+    op.create_index(op.f("ix_user_id"), "user", ["id"], unique=True)  # Should be unique
+    op.create_index(op.f("ix_phone_number"), "user", ["phone_number"], unique=False)
+
+    op.create_table(
+        "account",
+        sa.Column("id", sa.Integer(), primary_key=True, nullable=False),
+        sa.Column("user_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=True),
+        sa.Column("hashed_admin_PIN", sa.String(), nullable=True),
+        sa.Column("account_creation_date", sa.DateTime(timezone=True), server_default=func.now(), nullable=False),
+        sa.Column("account_last_update_date", sa.DateTime(timezone=True), server_default=func.now(), nullable=False),
+        sa.Column("last_account_changes_date", sa.DateTime(timezone=True), server_default=func.now(), nullable=False),
+        sa.Column("subscription_type", sa.String(), default='free', nullable=False),
+        sa.Column("last_login_date", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("bill_renew_date", sa.DateTime( timezone=True), nullable=True),
+        sa.Column("auto_renewal", sa.Boolean, default=False),
+        sa.Column("account_status_reason", sa.String(), nullable=True),
+        sa.Column("cancellation_date", sa.DateTime( timezone=True), nullable=True),
+        sa.Column("cancellation_reason", sa.String(), nullable=True),
+        sa.Column("preferred_contact_method", sa.String(), default='email'),
+        sa.Column("timezone", sa.String(), nullable=False),
+    )
+
+
+and how the data was added.
+
+
+def init_db(db: Session) -> None:
+
+    current_date: datetime = datetime.today()
+    formatted_date_today: str = current_date.strftime('%m/%d/%Y')
+    user = crud.user.get_by_email(db, email=settings.FIRST_SUPERUSER)
+    if not user:
+        user_in = schemas.UserCreate(
+            email=settings.FIRST_SUPERUSER,
+            password=settings.FIRST_SUPERUSER_PASSWORD,
+            full_name="Danny D.C.",            
+            is_superuser=True
+        )
+        account_in = schemas.AccountCreate(
+            account_creation_date=formatted_date_today,
+            last_login_date=formatted_date_today,
+            bill_renew_date=formatted_date_today,
+            last_account_changes_date=formatted_date_today,
+            account_last_update_date=formatted_date_today,
+            admin_PIN="112233", # Change this if keeping this account
+            timezone='Eastern'
+        )
+        user: schemas.User = crud.user.create(db, obj_in=user_in)  # noqa: F841
+        account: schemas.Account = crud.account.create(db, obj_in=account_in)
+
+
+As far as I can tell it should be there.. I though when i brought user, id see the link to account data. You sure the migrations are right? 

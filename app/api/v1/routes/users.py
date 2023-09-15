@@ -1,4 +1,5 @@
 from typing import Any, List, Optional
+from datetime import datetime
 
 from fastapi import (
     APIRouter, 
@@ -38,32 +39,50 @@ def read_users(
     Pull out all users in the system and return.
     """    
     users = crud.user.get_multi(db, skip=skip, limit=limit)
+    # this may need to return account data as well... I may need to create a new scema to pull it all together
+    # I could just leave thisas is or make it even less.... this ocould just be a litttle info about each user and then
+    # to dig deeper on an individual user. 
     return users
 
-
+# This will expect info for the User, and info for the users account. It will be sent in 
 # api/v1/
 @router.post("/", response_model=schemas.User)
 def create_user(
     *, 
     db: Session = Depends(deps.get_db),
     user_in: schemas.UserCreate,
-    #current_user: models.User = Depends(deps.get_current_active_superuser),
+    admin_pin: str = None
 ) -> Any:
     """
     Create new user.
     When a user registers, this endpoint creates the user.
     """
+    current_date: datetime = datetime.today()
+    formatted_date_today: str = current_date.strftime('%m/%d/%Y')
 
     user = crud.user.get_by_email(db, email=user_in.email)
     if user:
         raise HTTPException(
             status_code=400,
             detail="The user with this username already exists in the system.",
-        )
-    
+        )    
+    # set up the users account with default data
+    account_in = schemas.AccountCreate(
+        account_creation_date=formatted_date_today,
+        last_login_date=formatted_date_today,
+        bill_renew_date=formatted_date_today,
+        last_account_changes_date=formatted_date_today,
+        account_last_update_date=formatted_date_today,
+        admin_PIN=admin_pin
+    )
+
     try:
-        user = crud.user.create(db, obj_in=user_in)
-        logzz.info(f"New User Created: {user_in.email}, \nWooohooo! that's another $3.99 a month. -The Dream", timestamp=1)
+        # Create the user and add data the appropriate data to the User Table in the DB
+        user: schemas.User = crud.user.create(db, obj_in=user_in)
+        # create the account data 
+        account: schemas.Account = crud.account.create(db, obj_in=account_in)
+
+        logzz.info(f"New User Created: {user_in.email}", timestamp=1)
 
         if settings.EMAILS_ENABLED and user_in.email:
            verify_email_token = generate_verifyemail_token(user_in.email)
@@ -78,7 +97,8 @@ def create_user(
 
     return user
 
-
+# I will definitley need to alter this to update the acount info as well....
+# I can pass in as many as i need to update
 # api/v1/me
 @router.put("/me", response_model=schemas.User)
 def update_user_me(
@@ -91,6 +111,8 @@ def update_user_me(
     is_verified: bool = Body(False),
     failed_attempts: int = Body(None),
     account_locked: bool = Body(False),
+    # Account Info a user can update
+
     current_user: models.User = Depends(deps.get_current_active_user),
 ) -> Any:
     """
@@ -116,7 +138,8 @@ def update_user_me(
             user_in.account_locked = account_locked
 
         user = crud.user.update(db, db_obj=current_user, obj_in=user_in)
-
+        
+        # Now Account data
     except Exception as err:
         logzz.error(f"EndPoint -> api/v1/me 'update_user_me()': \n{str(err)}")
 
@@ -183,6 +206,7 @@ def create_user_open(
 
     return user
 
+# THis endpoint will need to be altered to return all the data including the account info
 #/api/v1/users/{user_id}
 @router.get("/{user_id}", response_model=schemas.User)
 def read_user_by_id(
@@ -203,6 +227,9 @@ def read_user_by_id(
         )
     
     return user
+
+# THis endpoint is to update another user by admin. I will need to make special sckema that encompasses
+# user and account info
 
 #/api/v1/users/{user_id}
 @router.put("/{user_id}", response_model=schemas.User)

@@ -60,6 +60,15 @@ Not very organized but basic list to do.
      I will have to wipe the ebtire DB, no big deal.. After I finally get the DB how I want it, I am going to create one
      Revision file that does all these at once, to a blank DB.
 
+   What endpoints do I need to add? id any. 
+
+   ok... the way it is when a user gets their Info, i can just call the account data that way.
+   When a new user is created, account data is created
+   it is deleted when user is deleted.
+   Basically all the account infois tied to the user info. Update user, update account. I do not think i will ned acount endpoints like 
+   I have user endppints.
+
+
      
 
 5. Design Emails:     

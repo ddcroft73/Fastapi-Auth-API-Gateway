@@ -21,7 +21,6 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             hashed_password=get_password_hash(obj_in.password),
             full_name=obj_in.full_name,
             is_superuser=obj_in.is_superuser,
-            # New 
             phone_number=obj_in.phone_number, #if obj_in.phone_number else None,
             is_verified=obj_in.is_verified, # if obj_in.is_verified else False,
             failed_attempts=obj_in.failed_attempts, # if obj_in.failed_attempts else 0,
@@ -56,13 +55,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         if not verify_password(password, user.hashed_password):
             return None
         return user
-## TODO:
-## Add methods to retrieve:
-# phone_number
-# is_verified: 
-# failed_attempts
-# account_locked
-
+    
     def is_active(self, user: User) -> bool:
         return user.is_active
 

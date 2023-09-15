@@ -4,3 +4,4 @@ logs
 .vscode
 alembic/versions/__pycache__
 test.html
+revision_backups
