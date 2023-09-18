@@ -26,7 +26,6 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_headers=["*"],
     )
 
-
 @app.get("/", tags=['home'], response_model=schemas.Msg)
 def root():
     return JSONResponse({"home": "Waiting for frontend..."})    

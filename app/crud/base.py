@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database.base_class import Base
+from app.utils.api_logger import logzz
 
 ModelType = TypeVar("ModelType", bound=Base)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
@@ -42,9 +43,16 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             update_data = obj_in
         else:
             update_data = obj_in.dict(exclude_unset=True)   # watch oiut for pydantic v2 changes. 
+        
+        #logzz.debug(f"obj_data: {obj_data}")
+
         for field in obj_data:
+           # logzz.debug(f"field in the obj_data: {field}")
             if field in update_data:
-                setattr(db_obj, field, update_data[field])
+             #   logzz.debug(f"updating: {field}")
+                setattr(db_obj, field, update_data[field])        
+
+       # logzz.debug(f"update_data inside Base {update_data}")
         db.add(db_obj)
         db.commit()
         db.refresh(db_obj)

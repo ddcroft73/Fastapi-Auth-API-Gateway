@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 from datetime import datetime
 
 from fastapi import (
@@ -14,6 +14,7 @@ from pydantic.networks import EmailStr
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
+
 from app.api import deps
 from app.core.config import settings
 from app.mail_utils import (
@@ -46,61 +47,62 @@ def read_users(
 
 # This will expect info for the User, and info for the users account. It will be sent in 
 # api/v1/
-@router.post("/", response_model=schemas.User)
+@router.post("/", response_model=schemas.UserResp)
 def create_user(
     *, 
     db: Session = Depends(deps.get_db),
     user_in: schemas.UserCreate,
-    admin_pin: str = None
+    account_in: schemas.AccountCreate,
 ) -> Any:
     """
-    Create new user.
-    When a user registers, this endpoint creates the user.
+    Create new user. When a user registers, this endpoint creates the user.
     """
-    current_date: datetime = datetime.today()
-    formatted_date_today: str = current_date.strftime('%m/%d/%Y')
-
     user = crud.user.get_by_email(db, email=user_in.email)
     if user:
         raise HTTPException(
             status_code=400,
             detail="The user with this username already exists in the system.",
-        )    
-    # set up the users account with default data
-    account_in = schemas.AccountCreate(
-        account_creation_date=formatted_date_today,
-        last_login_date=formatted_date_today,
-        bill_renew_date=formatted_date_today,
-        last_account_changes_date=formatted_date_today,
-        account_last_update_date=formatted_date_today,
-        admin_PIN=admin_pin
-    )
+        )
+    try:        
+        # add user, and then the users account info as it was passed in
+        user: models.User = crud.user.create_no_commit(db, obj_in=user_in)
+        account_in.user_id=user.id
+        account: models.Account = crud.account.create_no_commit(db, obj_in=account_in)
+                
+        db.commit()
+        db.refresh(user)
+        db.refresh(account)
+        
+        # Prepare the response
+        user_data_encoded = jsonable_encoder(user)
+        account_data_encoded = jsonable_encoder(account)
+        return_data = {
+            **user_data_encoded,
+            "account": account_data_encoded
+        }
+        user_response = schemas.UserResp(**return_data)
 
-    try:
-        # Create the user and add data the appropriate data to the User Table in the DB
-        user: schemas.User = crud.user.create(db, obj_in=user_in)
-        # create the account data 
-        account: schemas.Account = crud.account.create(db, obj_in=account_in)
-
-        logzz.info(f"New User Created: {user_in.email}", timestamp=1)
-
+        # notify New user they need to verify their Email if enabled.
         if settings.EMAILS_ENABLED and user_in.email:
            verify_email_token = generate_verifyemail_token(user_in.email)
            verify_email(
-               email_to='lapddc73@gmail.com',# user_in.email, HARD CODED FOR testing
+               email_to= user_in.email, 
                email_username=user_in.email, 
                token=verify_email_token
-            )
-            
+           )
+        logzz.info(f"New User Created: {user_in.email}", timestamp=1)
+        return user_response
+    
     except Exception as err:
+        # incase of error make sure no data is saved. Dont want a user without an account and vice versa
+        db.rollback()
         logzz.error(f"Endpoint -> api/v1 - create_user(): \n{str(err)} ")
-
-    return user
+    
 
 # I will definitley need to alter this to update the acount info as well....
 # I can pass in as many as i need to update
 # api/v1/me
-@router.put("/me", response_model=schemas.User)
+@router.put("/me", response_model=schemas.UserResp)
 def update_user_me(
     *,
     db: Session = Depends(deps.get_db),
@@ -108,10 +110,14 @@ def update_user_me(
     full_name: str = Body(None),
     email: EmailStr = Body(None),
     phone_number: str = Body(None),
-    is_verified: bool = Body(False),
-    failed_attempts: int = Body(None),
-    account_locked: bool = Body(False),
-    # Account Info a user can update
+    #Account
+    subscription_type: str = Body(None),
+    bill_renew_date: Union[datetime,str, None] = Body(None),
+    auto_bill_renewal: bool = Body(None),
+    cancellation_date: Union[datetime, str, None] = Body(None),
+    cancellation_reason: str = Body(None),
+    preferred_contact_method: str = Body(None),
+    timezone: str = Body(None),
 
     current_user: models.User = Depends(deps.get_current_active_user),
 ) -> Any:
@@ -120,8 +126,18 @@ def update_user_me(
     """
     try: 
         current_user_data = jsonable_encoder(current_user)
-        user_in = schemas.UserUpdate(**current_user_data)
+        current_users_account: models.Account = current_user.account
+        current_users_account = crud.account.get_by_user_id(db, user_id=current_user.id)
 
+        user_account_data = jsonable_encoder(current_users_account)
+
+        user_in = schemas.UserUpdate(**current_user_data)
+        account_in = schemas.AccountUpdate(**user_account_data)
+        
+        logzz.debug(f"user_in: {(user_in)}")
+        logzz.debug(f"account_in: {(account_in)}")
+   
+        # parse the incoming data.
         if password is not None:
             user_in.password = password
         if full_name is not None:
@@ -130,25 +146,43 @@ def update_user_me(
             user_in.email = email
         if phone_number is not None:  # Update for new field
             user_in.phone_number = phone_number
-        if is_verified is not None:  # Update for new field
-            user_in.is_verified = is_verified
-        if failed_attempts is not None:  # Update for new field
-            user_in.failed_attempts = failed_attempts
-        if account_locked is not None:  # Update for new field
-            user_in.account_locked = account_locked
+        
+        if subscription_type is not None:
+            account_in.subscription_type = subscription_type
+        if bill_renew_date is not None:
+            account_in.bill_renew_date = bill_renew_date
+        if auto_bill_renewal is not None: 
+            account_in.auto_bill_renewal = auto_bill_renewal
+        if cancellation_date is not None:
+            account_in.cancellation_date = cancellation_date
+        if cancellation_reason is not None:
+            account_in.cancellation_reason = cancellation_reason
+        if preferred_contact_method is not None:
+            account_in.preferred_contact_method = preferred_contact_method
+        if timezone is not None:
+            account_in.timezone = timezone
 
         user = crud.user.update(db, db_obj=current_user, obj_in=user_in)
+        account = crud.account.update(db, db_obj=current_users_account, obj_in=account_in)
         
-        # Now Account data
+        user_data_encoded = jsonable_encoder(user)
+        account_data_encoded = jsonable_encoder(account)
+
+        return_data = {
+            **user_data_encoded,
+            "account": account_data_encoded
+        }
+        user_response = schemas.UserResp(**return_data)
+        return user_response
+    
     except Exception as err:
         logzz.error(f"EndPoint -> api/v1/me 'update_user_me()': \n{str(err)}")
 
-    return user
 
 
 
 # api/v1/users/me
-@router.get("/me", response_model=schemas.User)
+@router.get("/me", response_model=schemas.UserResp)
 def read_user_me(
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
@@ -156,7 +190,18 @@ def read_user_me(
     """
     Get current user.
     """
-    return current_user
+    user_id: int = current_user.id
+    account: models.Account = crud.account.get_by_id(db, user_id=user_id)
+
+    user_data_encoded = jsonable_encoder(current_user)
+    account_data_encoded = jsonable_encoder(account)
+
+    return_data = {
+        **user_data_encoded,
+        "account": account_data_encoded
+    }
+    user_response = schemas.UserResp(**return_data)
+    return user_response
 
 
 # api/v1/open
@@ -253,6 +298,3 @@ def update_user(
     
     user = crud.user.update(db, db_obj=user, obj_in=user_in)
     return user
-
-
-## Endpoint to look up user bt Email

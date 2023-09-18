@@ -183,7 +183,7 @@ def resend_verification(email: EmailStr = Query(...)):
     # Create a new token and send out
     email_token = generate_verifyemail_token(email)
     verify_email(
-        email_to='gen.disarray73@outlook.com',  # user_in.email, HARD CODED FOR testing
+        email_to=email, # HARD CODED FOR testing
         email_username=email,
         token=email_token
     )

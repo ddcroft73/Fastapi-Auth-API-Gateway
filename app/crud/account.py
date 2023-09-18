@@ -17,21 +17,24 @@ from app.utils.api_logger import logzz
 
 class CRUDAccount(CRUDBase[Account, AccountCreate, AccountUpdate]):
     
-    def get_by_admin_id(self, db: Session, *, user_id: int) -> Optional[Account]:
-        return db.query(Account).filter(Account.id == user_id).first()
-        
+    #def get_by_id(self, db: Session, *, user_id: int) -> Optional[Account]:
+   #     return db.query(Account).filter(Account.id == user_id).first()
+    def get_by_user_id(self, db: Session, *, user_id: int) -> Optional[Account]:
+        return db.query(Account).filter(Account.user_id == user_id).first()
+
     def create(self, db: Session, *, obj_in: AccountCreate) -> Account:
-        db_obj = Account(
+        db_obj = Account(  # what about id?
             user_id=obj_in.user_id,
-            account_creation_date=obj_in.account_creation_date,
-            hashed_admin_PIN=get_password_hash(obj_in.admin_PIN),
-            account_last_update_date=obj_in.account_last_update_date,
-            last_account_changes_date=obj_in.last_account_changes_date,
+            creation_date=obj_in.creation_date,
+            hashed_admin_PIN=get_password_hash(
+                obj_in.admin_PIN) if obj_in.admin_PIN else None,
+            last_update_date=obj_in.last_update_date,
             subscription_type=obj_in.subscription_type, 
             last_login_date=obj_in.last_login_date, 
             bill_renew_date=obj_in.bill_renew_date, 
-            auto_renewal=obj_in.auto_renewal, 
-            account_status_reason=obj_in.account_status_reason,
+            auto_bill_renewal=obj_in.auto_bill_renewal,
+            account_locked=obj_in.account_locked,  
+            account_locked_reason=obj_in.account_locked_reason,
             cancellation_date=obj_in.cancellation_date,
             cancellation_reason=obj_in.cancellation_reason,
             preferred_contact_method=obj_in.preferred_contact_method,
@@ -41,6 +44,30 @@ class CRUDAccount(CRUDBase[Account, AccountCreate, AccountUpdate]):
         db.commit()
         db.refresh(db_obj)
         return db_obj
+        
+    def create_no_commit(self, db: Session, *, obj_in: AccountCreate) -> Account:
+        db_obj = Account(  # what about id?
+            user_id=obj_in.user_id,
+            creation_date=obj_in.creation_date,
+            hashed_admin_PIN=get_password_hash(
+                obj_in.admin_PIN) if obj_in.admin_PIN else None,
+            last_update_date=obj_in.last_update_date,
+            subscription_type=obj_in.subscription_type,
+            last_login_date=obj_in.last_login_date,
+            bill_renew_date=obj_in.bill_renew_date,
+            auto_bill_renewal=obj_in.auto_bill_renewal,
+            account_locked=obj_in.account_locked,
+            account_locked_reason=obj_in.account_locked_reason,
+            cancellation_date=obj_in.cancellation_date,
+            cancellation_reason=obj_in.cancellation_reason,
+            preferred_contact_method=obj_in.preferred_contact_method,
+            timezone=obj_in.timezone
+        )
+        db.add(db_obj)
+        db.flush()
+        return db_obj
+    
+
 
     def update(
         self, db: Session, *, db_obj: Account, obj_in: Union[AccountUpdate, Dict[str, Any]]
@@ -56,11 +83,11 @@ class CRUDAccount(CRUDBase[Account, AccountCreate, AccountUpdate]):
             hashed_admin_PIN = get_password_hash(update_data["admin_PIN"])
             del update_data["admin_PIN"]
             update_data["hashed_admin_PIN"] = hashed_admin_PIN
-        
+            
         return super().update(db, db_obj=db_obj, obj_in=update_data)
     
     def check_PIN(self, db: Session, *, pin: str, user_id: int) -> Optional[Account]:
-        admin = self.get_by_admin_id(db, user_id)
+        admin = self.get_by_id(db, user_id)
         if not admin:
             return None
         if not verify_password(pin, admin.hashed_admin_PIN):

@@ -14,17 +14,18 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     
     def get_by_email(self, db: Session, *, email: str) -> Optional[User]:
         return db.query(User).filter(User.email == email).first()
-
+    
+    # This method is used to save obly User data. This should not ever be used but I am leaving it 
+    # here for now.
     def create(self, db: Session, *, obj_in: UserCreate) -> User:
         db_obj = User(
             email=obj_in.email,
             hashed_password=get_password_hash(obj_in.password),
             full_name=obj_in.full_name,
             is_superuser=obj_in.is_superuser,
-            phone_number=obj_in.phone_number, #if obj_in.phone_number else None,
-            is_verified=obj_in.is_verified, # if obj_in.is_verified else False,
-            failed_attempts=obj_in.failed_attempts, # if obj_in.failed_attempts else 0,
-            account_locked=obj_in.account_locked, # if obj_in.account_locked else False  
+            phone_number=obj_in.phone_number,
+            is_verified=obj_in.is_verified, 
+            failed_login_attempts=obj_in.failed_login_attempts, 
             user_uuid=obj_in.user_uuid
         )
 
@@ -32,6 +33,25 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         db.commit()
         db.refresh(db_obj)
         return db_obj
+    
+    # This method will allow me to get the user.id data back without commiting the data
+    # This will ensure that I never have a User without an account.
+    def create_no_commit(self, db: Session, *, obj_in: UserCreate) -> User:
+        db_obj = User(
+            email=obj_in.email,
+            hashed_password=get_password_hash(obj_in.password),
+            full_name=obj_in.full_name,
+            is_superuser=obj_in.is_superuser,
+            phone_number=obj_in.phone_number,
+            is_verified=obj_in.is_verified,
+            failed_login_attempts=obj_in.failed_login_attempts,
+            user_uuid=obj_in.user_uuid
+        )
+        db.add(db_obj)
+        db.flush()  # add the user but do not commit so I can get back the user.id
+
+        return db_obj
+
 
     def update(
         self, db: Session, *, db_obj: User, obj_in: Union[UserUpdate, Dict[str, Any]]
