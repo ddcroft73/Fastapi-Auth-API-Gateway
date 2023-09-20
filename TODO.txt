@@ -143,3 +143,14 @@ up. I will absolutely use AI to help with that.
 
 
   
+  Try to access the accout pasrt of the ORM instance from the user and pass that to the account update function
+
+  how about this. instead of using Account Orm we can try to access it from the user. Using the relatinship. We already see its there. Herer is the user data that is working when updating
+  DEBUG:  obj_data: {'email': 'ddc.dev.python@gmail.com', 'is_active': True, 'phone_number': None, 'is_verified': False, 'id': 1, 'user_uuid': 'dcc8b7ce-296b-4a0c-be9f-4e690794594e', 'full_name': 'David D. Croft, Jr.', 'hashed_password': '$2b$12$6g1j8GFySexTMJpbc3N1wO5i0LKOV8dcdFEVeAwHwFJ7IzXyBHsB.', 'is_superuser': True, 'failed_login_attempts': 0, 'account': {'id': 1, 'bill_renew_date': None, 'account_locked': False, 'cancellation_date': None, 'preferred_contact_method': 'email', 'hashed_admin_PIN': '$2b$12$S12DMuUrr7iVlLdnfDz4MOhkG6nP.XsG/oy2QSsd4gNqOnoXQHfWW', 'user_id': 1, 'creation_date': '2023-09-18T17:31:55.844823+00:00', 'last_update_date': '2023-09-18T17:31:55.844823+00:00', 'subscription_type': 'free', 'last_login_date': None, 'auto_bill_renewal': False, 'account_locked_reason': None, 'cancellation_reason': None, 'timezone': 'Eastern'}}
+hell, theres account right there. so instead of trhying to use this toget the account data; 
+        current_users_account: models.Account = current_user.account
+        #current_users_account = crud.account.get_by_user_id(db, user_id=current_user.id)
+        user_account_data = jsonable_encoder(current_users_account)
+  Cant we access it from within user and use that to send here:        
+        account = crud.account.update(db, db_obj=current_users_account, obj_in=account_in)
+        I bet that will work!

@@ -4,10 +4,12 @@ from pydantic import BaseModel, EmailStr, Field
 import uuid
 
 # Shared properties
+
+
 class UserBase(BaseModel):
     email: Optional[EmailStr] = None
+    user_uuid: uuid.UUID = Field(default_factory=uuid.uuid4)
     is_active: Optional[bool] = True
-    is_superuser: bool = False
     full_name: Optional[str] = None
     phone_number: Optional[str] = None
     is_verified: Optional[bool] = False
@@ -18,7 +20,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     email: EmailStr
     password: str
-    user_uuid: uuid.UUID = Field(default_factory=uuid.uuid4)
+    is_superuser: bool = False #I dont want this to be visible in the
 
 # Properties to receive via API on update
 class UserUpdate(UserBase):

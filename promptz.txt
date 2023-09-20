@@ -1,11 +1,180 @@
- if isinstance(date, datetime):
-            return date
-        if isinstance(date, str):
-            iso_format_pattern = r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.*'
-            mm_dd_yyyy = f'^ (0[1-9] | 1[0-2])/(0[1-9] | [12][0-9] | 3[01])/[0-9]{4}$'
-            if re.match(iso_format_pattern, date):
-                dt_obj = datetime.fromisoformat(date)
-                return dt_obj.strftime('%m/%d/%Y').date()
-            elif re.match(mm_dd_yyyy, date):
-                return datetime.strptime(date, '%m/%d/%Y').date()        
+ the update me endpoint code: 
+ 
+@router.put("/me", response_model=schemas.UserResp)
+def update_user_me(
+    *,
+    db: Session = Depends(deps.get_db),
+    password: str = Body(None),
+    full_name: str = Body(None),
+    email: EmailStr = Body(None),
+    phone_number: str = Body(None),
+    #Account
+    subscription_type: str = Body(None),
+    bill_renew_date: Union[datetime,str, None] = Body(None),
+    auto_bill_renewal: bool = Body(None),
+    cancellation_date: Union[datetime, str, None] = Body(None),
+    cancellation_reason: str = Body(None),
+    preferred_contact_method: str = Body(None),
+    timezone: str = Body(None),
+
+    current_user: models.User = Depends(deps.get_current_active_user),
+) -> Any:
+    """
+    Update own user.
+    """
+    try: 
+        current_user_data = jsonable_encoder(current_user)
+        current_users_account: models.Account = current_user.account
+        current_users_account = crud.account.get_by_user_id(db, user_id=current_user.id)
+
+        user_account_data = jsonable_encoder(current_users_account)
+
+        user_in = schemas.UserUpdate(**current_user_data)
+        account_in = schemas.AccountUpdate(**user_account_data)
         
+        logzz.debug(f"user_in: {(user_in)}")
+        logzz.debug(f"account_in: {(account_in)}")
+   
+        # parse the incoming data.
+        if password is not None:
+            user_in.password = password
+        if full_name is not None:
+            user_in.full_name = full_name
+        if email is not None:
+            user_in.email = email
+        if phone_number is not None:  # Update for new field
+            user_in.phone_number = phone_number
+        
+        if subscription_type is not None:
+        {... you get the idea}
+
+        user = crud.user.update(db, db_obj=current_user, obj_in=user_in)
+        account = crud.account.update(db, db_obj=current_users_account, obj_in=account_in)
+        
+        user_data_encoded = jsonable_encoder(user)
+        account_data_encoded = jsonable_encoder(account)
+
+        return_data = {
+            **user_data_encoded,
+            "account": account_data_encoded
+        }
+        user_response = schemas.UserResp(**return_data)
+        return user_response
+    
+    except Exception as err:
+        logzz.error(f"EndPoint -> api/v1/me 'update_user_me()': \n{str(err)}")
+
+
+the CRUDAccount update method:
+
+
+    def update(
+        self, db: Session, *, db_obj: Account, obj_in: Union[AccountUpdate, Dict[str, Any]]
+    ) -> Account:
+        if isinstance(obj_in, dict):
+            update_data = obj_in
+        else:
+            update_data = obj_in.dict(exclude_unset=True)
+
+        # updating the PIN, make sure its not saved until its hashed.
+        # Its still a password afterall.
+        if "admin_PIN" in update_data: 
+            hashed_admin_PIN = get_password_hash(update_data["admin_PIN"])
+            del update_data["admin_PIN"]
+            update_data["hashed_admin_PIN"] = hashed_admin_PIN
+            
+        return super().update(db, db_obj=db_obj, obj_in=update_data)
+
+Base update method:
+
+    def update(self, db: Session, *, db_obj: ModelType, obj_in: Union[UpdateSchemaType, Dict[str, Any]]) -> ModelType:
+        obj_data = jsonable_encoder(db_obj)
+        if isinstance(obj_in, dict):
+            update_data = obj_in
+        else:
+            update_data = obj_in.dict(exclude_unset=True)   # watch oiut for pydantic v2 changes. 
+        
+        #logzz.debug(f"obj_data: {obj_data}")
+
+        for field in obj_data:
+           # logzz.debug(f"field in the obj_data: {field}")
+            if field in update_data:
+             #   logzz.debug(f"updating: {field}")
+                setattr(db_obj, field, update_data[field])        
+
+       # logzz.debug(f"update_data inside Base {update_data}")
+        db.add(db_obj)
+        db.commit()
+        db.refresh(db_obj)
+        return db_obj
+
+Acount model:
+
+
+class Account(Base):
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('user.id')) 
+    hashed_admin_PIN = Column(String, nullable=True)  # This unlike the pasword can be empty.
+    creation_date = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    last_update_date = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    subscription_type = Column(String, default='free')  # Defaulted to 'free'
+    last_login_date = Column(DateTime(timezone=True), nullable=True)
+    bill_renew_date = Column(DateTime(timezone=True), nullable=True)
+    auto_bill_renewal = Column(Boolean, default=False)
+    account_locked = Column(Boolean(), default=False)
+    account_locked_reason = Column(String, nullable=True)
+    cancellation_date = Column(DateTime(timezone=True), nullable=True)
+    cancellation_reason = Column(String, nullable=True)
+    preferred_contact_method = Column(String, default='email')
+    timezone = Column(String, nullable=True)  
+
+    user = relationship("User", back_populates="account")
+
+ and acount schema:
+
+ class AccountBase(BaseModel):
+    user_id: int   # Add this line
+    creation_date: Union[datetime, str, None] = Field(..., example="01/23/2022")
+    subscription_type: str = 'free' # free, basic, premium, maybe one other. Need to figure this out
+    last_login_date: Union[datetime, str, None] = Field(..., example="01/23/2022")   # Has not logged in yet, None is valid at creation
+    bill_renew_date:  Union[datetime, str, None] = Field(None, example="01/23/2022")  # Dont know, free account None should be fine.
+    auto_bill_renewal: bool = False
+
+    cancellation_date:  Union[datetime, str, None] = Field(None, example="01/23/2022")
+    cancellation_reason: Optional[str] = None
+
+    last_update_date:  Union[datetime, str, None] = Field(None, example="01/23/2022")
+    preferred_contact_method: Optional[str] = 'email' # email, sms
+    account_locked: Optional[bool] = False
+    account_locked_reason: Optional[str] = None  # Account can be locked if any weird shit ensues, and fot faile login attempts.
+    timezone: Optional[str] = None
+
+class AccountCreate(AccountBase):
+    user_id: Optional[int]
+    admin_PIN: Optional[str]   
+
+# Properties to receive via API on update
+class AccountUpdate(AccountBase):
+    subscription_type: Optional[str]
+    auto_bill_renewal: Optional[bool]
+    preferred_contact_method: Optional[str]
+    cancellation_date: Union[datetime, str, None]
+    cancellation_reason: Optional[str] = None
+   
+class AccountInDBBase(AccountBase):
+    id: Optional[int] = None
+
+    class Config:
+        orm_mode = True
+
+# Additional properties to return via API
+class Account(AccountInDBBase):
+    pass
+
+# Additional properties stored in DB
+class AccountInDB(AccountInDBBase):
+    hashed_admin_PIN: Optional[str] = None # This only comes into play if the account is an admin account
+
+
+i believe the issue is in the endpoint and how the account model i being handled, the emcoding, ut in all the debugging the values that I need are there
+except when we get into the base update method. For some reason, obj_data is an empty dict when it  gets there and thats the issue. 

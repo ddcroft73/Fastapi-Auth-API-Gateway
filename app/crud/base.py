@@ -30,7 +30,11 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return db.query(self.model).offset(skip).limit(limit).all()
 
     def create(self, db: Session, *, obj_in: CreateSchemaType) -> ModelType:
-        obj_in_data = jsonable_encoder(obj_in)
+        try:
+             obj_in_data = jsonable_encoder(obj_in)
+        except Exception as er:
+            logzz.info(f'ERROR in jsonable_encoder()  {str(er)}')
+
         db_obj = self.model(**obj_in_data)
         db.add(db_obj)
         db.commit()
@@ -38,18 +42,22 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return db_obj
 
     def update(self, db: Session, *, db_obj: ModelType, obj_in: Union[UpdateSchemaType, Dict[str, Any]]) -> ModelType:
+        logzz.info(db_obj.__dict__)
+
         obj_data = jsonable_encoder(db_obj)
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
             update_data = obj_in.dict(exclude_unset=True)   # watch oiut for pydantic v2 changes. 
-        
-        #logzz.debug(f"obj_data: {obj_data}")
 
+        logzz.debug(f"db_obj: {db_obj}")
+        logzz.debug(f"obj_data: {obj_data}")
+        logzz.debug(f'update_data: {update_data}')
+        
         for field in obj_data:
-           # logzz.debug(f"field in the obj_data: {field}")
+            #logzz.debug(f"field in obj_data: {field}")
             if field in update_data:
-             #   logzz.debug(f"updating: {field}")
+                #logzz.debug(f"field in update_data: {field}")
                 setattr(db_obj, field, update_data[field])        
 
        # logzz.debug(f"update_data inside Base {update_data}")

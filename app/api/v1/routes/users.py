@@ -26,8 +26,32 @@ from app.utils.api_logger import logzz
 
 router = APIRouter()
 
+
+# api/v1/users/me
+@router.get("/me", response_model=schemas.UserResp)
+def read_user_me(
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_active_user),
+) -> Any:
+    """
+    Get current user.
+    """
+    user_id: int = current_user.id
+    account: models.Account = crud.account.get_by_user_id(db, user_id=user_id)
+
+    user_data_encoded = jsonable_encoder(current_user)
+    account_data_encoded = jsonable_encoder(account)
+
+    return_data = {
+        **user_data_encoded,
+        "account": account_data_encoded
+    }
+    user_response = schemas.UserResp(**return_data)
+    return user_response
+
+
 # api/v1/
-@router.get("/", response_model=List[schemas.User])
+@router.get("/", response_model=List[schemas.UserResp])
 def read_users(
     request: Request,
     db: Session = Depends(deps.get_db),
@@ -38,12 +62,27 @@ def read_users(
     """
     Retrieve users: 
     Pull out all users in the system and return.
+
+    This could get really slow when the users get into the 1000's need to think about this, a lot.
     """    
     users = crud.user.get_multi(db, skip=skip, limit=limit)
-    # this may need to return account data as well... I may need to create a new scema to pull it all together
-    # I could just leave thisas is or make it even less.... this ocould just be a litttle info about each user and then
-    # to dig deeper on an individual user. 
-    return users
+    user_data: list[schemas.UserResp] = []
+
+    for user in users:
+        user_id: int = user.id
+        account: models.Account = crud.account.get_by_user_id(db, user_id=user_id)
+
+        user_data_encoded = jsonable_encoder(user)
+        account_data_encoded = jsonable_encoder(account)
+
+        return_data = {
+            **user_data_encoded,
+            "account": account_data_encoded
+        }
+        user_response = schemas.UserResp(**return_data)
+        user_data.append(user_response)
+
+    return user_data
 
 # This will expect info for the User, and info for the users account. It will be sent in 
 # api/v1/
@@ -127,14 +166,13 @@ def update_user_me(
     try: 
         current_user_data = jsonable_encoder(current_user)
         current_users_account: models.Account = current_user.account
-        current_users_account = crud.account.get_by_user_id(db, user_id=current_user.id)
-
+        #current_users_account = crud.account.get_by_user_id(db, user_id=current_user.id)
         user_account_data = jsonable_encoder(current_users_account)
-
+        
         user_in = schemas.UserUpdate(**current_user_data)
         account_in = schemas.AccountUpdate(**user_account_data)
         
-        logzz.debug(f"user_in: {(user_in)}")
+        logzz.info(f"user_account_data: {(user_account_data)}")
         logzz.debug(f"account_in: {(account_in)}")
    
         # parse the incoming data.
@@ -177,31 +215,6 @@ def update_user_me(
     
     except Exception as err:
         logzz.error(f"EndPoint -> api/v1/me 'update_user_me()': \n{str(err)}")
-
-
-
-
-# api/v1/users/me
-@router.get("/me", response_model=schemas.UserResp)
-def read_user_me(
-    db: Session = Depends(deps.get_db),
-    current_user: models.User = Depends(deps.get_current_active_user),
-) -> Any:
-    """
-    Get current user.
-    """
-    user_id: int = current_user.id
-    account: models.Account = crud.account.get_by_id(db, user_id=user_id)
-
-    user_data_encoded = jsonable_encoder(current_user)
-    account_data_encoded = jsonable_encoder(account)
-
-    return_data = {
-        **user_data_encoded,
-        "account": account_data_encoded
-    }
-    user_response = schemas.UserResp(**return_data)
-    return user_response
 
 
 # api/v1/open

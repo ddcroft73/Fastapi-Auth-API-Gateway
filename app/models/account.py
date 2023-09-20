@@ -25,6 +25,3 @@ class Account(Base):
     timezone = Column(String, nullable=True)  
 
     user = relationship("User", back_populates="account")
-
-
-# Do I need to add the times here if Im already in the DB?
