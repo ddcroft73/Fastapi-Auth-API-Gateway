@@ -28,7 +28,7 @@ router = APIRouter()
 
 
 # api/v1/users/me
-@router.get("/me", response_model=schemas.UserResp)
+@router.get("/me", response_model=schemas.UserAccount)
 def read_user_me(
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
@@ -41,17 +41,11 @@ def read_user_me(
 
     user_data_encoded = jsonable_encoder(current_user)
     account_data_encoded = jsonable_encoder(account)
-
-    return_data = {
-        **user_data_encoded,
-        "account": account_data_encoded
-    }
-    user_response = schemas.UserResp(**return_data)
-    return user_response
+    return schemas.UserAccount(user=user_data_encoded, account=account_data_encoded)
 
 
 # api/v1/
-@router.get("/", response_model=List[schemas.UserResp])
+@router.get("/", response_model=List[schemas.UserAccount])
 def read_users(
     request: Request,
     db: Session = Depends(deps.get_db),
@@ -71,22 +65,14 @@ def read_users(
     for user in users:
         user_id: int = user.id
         account: models.Account = crud.account.get_by_user_id(db, user_id=user_id)
-
         user_data_encoded = jsonable_encoder(user)
         account_data_encoded = jsonable_encoder(account)
 
-        return_data = {
-            **user_data_encoded,
-            "account": account_data_encoded
-        }
-        user_response = schemas.UserResp(**return_data)
-        user_data.append(user_response)
-
-    return user_data
+    return schemas.UserAccount(user=user_data_encoded, account=account_data_encoded)
 
 # This will expect info for the User, and info for the users account. It will be sent in 
 # api/v1/
-@router.post("/", response_model=schemas.UserResp)
+@router.post("/", response_model=schemas.UserAccount)
 def create_user(
     *, 
     db: Session = Depends(deps.get_db),
@@ -115,11 +101,6 @@ def create_user(
         # Prepare the response
         user_data_encoded = jsonable_encoder(user)
         account_data_encoded = jsonable_encoder(account)
-        return_data = {
-            **user_data_encoded,
-            "account": account_data_encoded
-        }
-        user_response = schemas.UserResp(**return_data)
 
         # notify New user they need to verify their Email if enabled.
         if settings.EMAILS_ENABLED and user_in.email:
@@ -129,8 +110,9 @@ def create_user(
                email_username=user_in.email, 
                token=verify_email_token
            )
+
         logzz.info(f"New User Created: {user_in.email}", timestamp=1)
-        return user_response
+        return schemas.UserAccount(user=user_data_encoded, account=account_data_encoded)
     
     except Exception as err:
         # incase of error make sure no data is saved. Dont want a user without an account and vice versa
@@ -141,7 +123,7 @@ def create_user(
 # I will definitley need to alter this to update the acount info as well....
 # I can pass in as many as i need to update
 # api/v1/me
-@router.put("/me", response_model=schemas.UserResp)
+@router.put("/me", response_model=schemas.UserAccount)
 def update_user_me(
     *,
     db: Session = Depends(deps.get_db),
@@ -205,13 +187,8 @@ def update_user_me(
         
         user_data_encoded = jsonable_encoder(user)
         account_data_encoded = jsonable_encoder(account)
-
-        return_data = {
-            **user_data_encoded,
-            "account": account_data_encoded
-        }
-        user_response = schemas.UserResp(**return_data)
-        return user_response
+        
+        return schemas.UserAccount(user=user_data_encoded, account=account_data_encoded)
     
     except Exception as err:
         logzz.error(f"EndPoint -> api/v1/me 'update_user_me()': \n{str(err)}")

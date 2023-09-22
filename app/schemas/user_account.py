@@ -1,10 +1,14 @@
 from .user import UserBase
 from .account import AccountBase
-from datetime import datetime
+from pydantic import BaseModel
 
-class AccountResp(AccountBase):
-    pass
 
-class UserResp(UserBase):
-    account: AccountResp
-    
+class UserAccount(BaseModel):
+    user: UserBase
+    account: AccountBase
+
+    class Config:
+        orm_mode = True
+        
+
+
