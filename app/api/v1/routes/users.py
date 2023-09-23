@@ -36,8 +36,8 @@ def read_user_me(
     """
     Get current user.
     """
-    user_id: int = current_user.id
-    account: models.Account = crud.account.get_by_user_id(db, user_id=user_id)
+    #account: models.Account = crud.account.get_by_user_id(db, user_id=user_id)
+    account: models.Account = current_user.account
 
     user_data_encoded = jsonable_encoder(current_user)
     account_data_encoded = jsonable_encoder(account)
@@ -60,15 +60,18 @@ def read_users(
     This could get really slow when the users get into the 1000's need to think about this, a lot.
     """    
     users = crud.user.get_multi(db, skip=skip, limit=limit)
-    user_data: list[schemas.UserResp] = []
+    user_data: list[schemas.UserAccount] = []
 
-    for user in users:
-        user_id: int = user.id
-        account: models.Account = crud.account.get_by_user_id(db, user_id=user_id)
+    for user in users:        
+        account: models.Account = user.account
         user_data_encoded = jsonable_encoder(user)
         account_data_encoded = jsonable_encoder(account)
 
-    return schemas.UserAccount(user=user_data_encoded, account=account_data_encoded)
+        user_data.append(schemas.UserAccount(
+            user=user_data_encoded, 
+            account=account_data_encoded)
+        )
+    return user_data 
 
 # This will expect info for the User, and info for the users account. It will be sent in 
 # api/v1/
@@ -91,6 +94,7 @@ def create_user(
     try:        
         # add user, and then the users account info as it was passed in
         user: models.User = crud.user.create_no_commit(db, obj_in=user_in)
+        
         account_in.user_id=user.id
         account: models.Account = crud.account.create_no_commit(db, obj_in=account_in)
                 
@@ -110,7 +114,6 @@ def create_user(
                email_username=user_in.email, 
                token=verify_email_token
            )
-
         logzz.info(f"New User Created: {user_in.email}", timestamp=1)
         return schemas.UserAccount(user=user_data_encoded, account=account_data_encoded)
     
@@ -120,8 +123,6 @@ def create_user(
         logzz.error(f"Endpoint -> api/v1 - create_user(): \n{str(err)} ")
     
 
-# I will definitley need to alter this to update the acount info as well....
-# I can pass in as many as i need to update
 # api/v1/me
 @router.put("/me", response_model=schemas.UserAccount)
 def update_user_me(
@@ -138,6 +139,7 @@ def update_user_me(
     cancellation_date: Union[datetime, str, None] = Body(None),
     cancellation_reason: str = Body(None),
     preferred_contact_method: str = Body(None),
+    admin_PIN: str = Body(None),
     timezone: str = Body(None),
 
     current_user: models.User = Depends(deps.get_current_active_user),
@@ -146,17 +148,9 @@ def update_user_me(
     Update own user.
     """
     try: 
-        current_user_data = jsonable_encoder(current_user)
-        current_users_account: models.Account = current_user.account
-        #current_users_account = crud.account.get_by_user_id(db, user_id=current_user.id)
-        user_account_data = jsonable_encoder(current_users_account)
-        
-        user_in = schemas.UserUpdate(**current_user_data)
-        account_in = schemas.AccountUpdate(**user_account_data)
-        
-        logzz.info(f"user_account_data: {(user_account_data)}")
-        logzz.debug(f"account_in: {(account_in)}")
-   
+        # Handle User instance
+        current_user_data = jsonable_encoder(current_user)        
+        user_in = schemas.UserUpdate(**current_user_data)   
         # parse the incoming data.
         if password is not None:
             user_in.password = password
@@ -166,7 +160,17 @@ def update_user_me(
             user_in.email = email
         if phone_number is not None:  # Update for new field
             user_in.phone_number = phone_number
-        
+
+        user = crud.user.update(db, db_obj=current_user, obj_in=user_in)
+        user_data_encoded = jsonable_encoder(user)
+
+        # Handle Account Instance.
+        current_users_account: models.Account = current_user.account
+        user_account_data = jsonable_encoder(current_users_account)
+        account_in = schemas.AccountUpdate(**user_account_data)
+        # parse Account fields to update
+        if admin_PIN is not None:
+            account_in.admin_PIN = admin_PIN            
         if subscription_type is not None:
             account_in.subscription_type = subscription_type
         if bill_renew_date is not None:
@@ -182,12 +186,9 @@ def update_user_me(
         if timezone is not None:
             account_in.timezone = timezone
 
-        user = crud.user.update(db, db_obj=current_user, obj_in=user_in)
-        account = crud.account.update(db, db_obj=current_users_account, obj_in=account_in)
-        
-        user_data_encoded = jsonable_encoder(user)
+        account = crud.account.update(db, db_obj=current_users_account, obj_in=account_in)        
         account_data_encoded = jsonable_encoder(account)
-        
+
         return schemas.UserAccount(user=user_data_encoded, account=account_data_encoded)
     
     except Exception as err:
@@ -241,38 +242,34 @@ def create_user_open(
 
     return user
 
-# THis endpoint will need to be altered to return all the data including the account info
 #/api/v1/users/{user_id}
-@router.get("/{user_id}", response_model=schemas.User)
+@router.get("/{user_id}", response_model=schemas.UserAccount)
 def read_user_by_id(
     user_id: int,
-    current_user: models.User = Depends(deps.get_current_active_user),
+    current_user: models.User = Depends(deps.get_current_active_superuser),
     db: Session = Depends(deps.get_db),
 ) -> Any:
     """
     Get a specific user by id.
+    We need to return The User and acount info
     """
     user = crud.user.get(db, model_id=user_id)
-    if user == current_user:
-        return user
+    account: models.Account = crud.account.get_by_user_id(db, user_id=user_id)
     
-    if not crud.user.is_superuser(current_user):
-        raise HTTPException(
-            status_code=400, detail="The user doesn't have enough privileges"
-        )
-    
-    return user
+    user_data_encoded = jsonable_encoder(user)
+    account_data_encoded = jsonable_encoder(account)
 
-# THis endpoint is to update another user by admin. I will need to make special sckema that encompasses
-# user and account info
+    return schemas.UserAccount(user=user_data_encoded, account=account_data_encoded)
+
 
 #/api/v1/users/{user_id}
-@router.put("/{user_id}", response_model=schemas.User)
+@router.put("/{user_id}", response_model=schemas.UserAccount)
 def update_user(
     *,
     db: Session = Depends(deps.get_db),
     user_id: int,
     user_in: schemas.UserUpdate,
+    account_in: schemas.AccountUpdate,
     current_user: models.User = Depends(deps.get_current_active_superuser),
 ) -> Any:
     """
@@ -286,5 +283,6 @@ def update_user(
             detail="The user with this username does not exist in the system",
         )
     
+
     user = crud.user.update(db, db_obj=user, obj_in=user_in)
     return user

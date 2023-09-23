@@ -42,22 +42,14 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return db_obj
 
     def update(self, db: Session, *, db_obj: ModelType, obj_in: Union[UpdateSchemaType, Dict[str, Any]]) -> ModelType:
-        logzz.info(db_obj.__dict__)
-
         obj_data = jsonable_encoder(db_obj)
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
             update_data = obj_in.dict(exclude_unset=True)   # watch oiut for pydantic v2 changes. 
 
-        logzz.debug(f"db_obj: {db_obj}")
-        logzz.debug(f"obj_data: {obj_data}")
-        logzz.debug(f'update_data: {update_data}')
-        
         for field in obj_data:
-            #logzz.debug(f"field in obj_data: {field}")
             if field in update_data:
-                #logzz.debug(f"field in update_data: {field}")
                 setattr(db_obj, field, update_data[field])        
 
        # logzz.debug(f"update_data inside Base {update_data}")

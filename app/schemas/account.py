@@ -28,7 +28,7 @@ class AccountCreate(AccountBase):
 
 # Properties to receive via API on update
 class AccountUpdate(AccountBase):
-    pass
+    admin_PIN: Optional[str]
     '''
     subscription_type: Optional[str]
     auto_bill_renewal: Optional[bool]
