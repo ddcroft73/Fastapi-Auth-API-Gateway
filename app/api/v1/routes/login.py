@@ -73,8 +73,7 @@ def login_access_token(
         "access_token": security.create_access_token(
             user.id, user_role, expires_delta=access_token_expires
         ),
-        "token_type": "bearer",
-        "user_role": user_role
+        "token_type": "bearer"
     })
 #
 #/api/v1/auth/login/test-token

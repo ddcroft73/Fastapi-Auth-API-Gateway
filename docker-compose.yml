@@ -50,15 +50,6 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
-  sandbox:
-    build:
-      context: .
-      dockerfile: ./sandbox.dockerfile 
-    volumes:
-      - ./app/sandbox:/app/sandbox
-    command: tail -f /dev/null # Dont let the container close. 
-    depends_on:
-      - web
 
 volumes:
   pgdata:
