@@ -206,6 +206,7 @@ def update_user_me(
         if cell_provider_2FA is not None:
             account_in.cell_provider_2FA = cell_provider_2FA
 
+        account = crud.account.update(db, db_obj=current_users_account, obj_in=account_in)   
         account = crud.account.update(db, db_obj=current_users_account, obj_in=account_in)        
         account_data_encoded = jsonable_encoder(account)
         
@@ -248,8 +249,10 @@ def update_user(
         
         user_after_update = crud.user.update(db, db_obj=user, obj_in=user_in) 
         user_data_encoded = jsonable_encoder(user_after_update)       
-        
-        account_after_update = crud.account.update(db, db_obj=account, obj_in=account_in)                
+         
+        # Hack to fix the Update Bug... update the second twice.      
+        account_after_update = crud.account.update(db, db_obj=account, obj_in=account_in)  
+        account_after_update = crud.account.update(db, db_obj=account, obj_in=account_in)   
         account_data_encoded = jsonable_encoder(account_after_update)
 
         return schemas.UserAccount(user=user_data_encoded, account=account_data_encoded)
@@ -318,14 +321,19 @@ def read_user_by_id(
     Get a specific user by id.
     We need to return The User and acount info
     """
-    try:
-        user = crud.user.get(db, model_id=user_id)
-        account: models.Account = crud.account.get_by_user_id(db, user_id=user_id)
-        
-        user_data_encoded = jsonable_encoder(user)
-        account_data_encoded = jsonable_encoder(account)
+    user = crud.user.get(db, model_id=user_id)
+    account: models.Account = crud.account.get_by_user_id(db, user_id=user_id)
+    
+    user_data_encoded = jsonable_encoder(user)
+    account_data_encoded = jsonable_encoder(account)
 
-        return schemas.UserAccount(user=user_data_encoded, account=account_data_encoded)        
-        
-    except Exception as exc:
-        logzz.error(str(exc))
+    return schemas.UserAccount(user=user_data_encoded, account=account_data_encoded)        
+    
+ 
+
+@router.delete("/delete/{user_id}", response_model=schemas.Msg)
+def delete_user() -> Any:
+    '''
+    Delete a user from the system. Super user action.
+    '''
+    pass

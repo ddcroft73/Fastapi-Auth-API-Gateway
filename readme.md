@@ -19,11 +19,7 @@ A Python FastAPI service to authenticate authorize and manage my user base. As o
 - Need to finish endpoints (Delete, clean up code on others) 
 - Add the logic for Admin PIN Access (verify_admin_token)
 - Figure out a productionn logging setup.
-- Need to fix the "Update" bug. 
-    This bug has been driving me crazy. I have a database with 2 tables. user, and account. They are relational. I have to update each table
-    individually. The problem is only the first one to be accessed will update. If user is first, account does not update. If account is 
-    first, user does not. If i send the request twice, `update_me` will update both. I had thought i fixed update_me, but the issue i have learned
-    persists. It's worse with `update_by_id`
+- Find a better way to fix the `update bug`. It works but I'm not proud of the fix.
 - Finish resend-verification.
 - Finish password recovery
 - Implement 2FA. This has been started. Added dataase fields and some code framework.
@@ -32,6 +28,7 @@ A Python FastAPI service to authenticate authorize and manage my user base. As o
 - Rate limiting, 
 - Add logic for revoking Tokens. This will be based on the user logging out,
 - Add endpoint so I can logout individual users.
+- Add Logout own user
   
 <hr>
 
@@ -43,11 +40,10 @@ A Python FastAPI service to authenticate authorize and manage my user base. As o
 
 
 ## Latest Changes: 11/04/23
-
 - Updated fasAPI to 0.104.0
 - I moved the .env file to auth-server.env  
 - Added env_file to the docker-compose file.
 - Added fields to the database for 2FA. still need to code it.
 - Added some new fields to the user and account tables to implement 2FA
 - Removed failed_login_attempts.
-- 
+- Found a fix fot the `update bug`

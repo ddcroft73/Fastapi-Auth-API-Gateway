@@ -54,8 +54,7 @@ def login_access_token(
 
     user = crud.user.authenticate(
         db, email=form_data.username, password=form_data.password
-    )
-    
+    )    
 
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
@@ -64,7 +63,6 @@ def login_access_token(
     
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     
-    # Decide if this is a super_user or a normal user and attach it to the response
     if crud.user.is_superuser(user):
          user_role ='admin'
     else:
@@ -74,7 +72,7 @@ def login_access_token(
     # know to invoke the 2FA.
     if user.account.use_2FA: 
         pass
-        #return {"msg": "use_2FA"}
+        #return {"msg": "use_2FA"}   
 
     # The client gets the msg to invoke 2FA, the client sends a request to this server @ get-2fa-code/
     # acode is generated and sent to the user either by EMail, SMS. and the client will call the UI
@@ -89,6 +87,7 @@ def login_access_token(
         ),
         "token_type": "bearer"
     })
+
 #
 #/api/v1/auth/login/test-token
 #
@@ -97,6 +96,7 @@ def test_token(current_user: models.User = Depends(deps.get_current_user)) -> An
     """
     Test access token
     """
+
     return current_user
 #
 #/api/v1/auth/login/password-recovery/{email}
@@ -187,7 +187,7 @@ def verify_email(
     return JSONResponse({"result": "Email Verified. User Ok to login"})
 
 
-@router.get("/resend-verification/", response_model=schemas.Msg)
+@router.put("/resend-verification/", response_model=schemas.Msg)
 def resend_verification(email: EmailStr = Query(...)):
     # Create a new token and send out
     email_token = generate_verifyemail_token(email)
@@ -197,4 +197,31 @@ def resend_verification(email: EmailStr = Query(...)):
         token=email_token
     )
     logzz.info(f'User: {email} was sent another verify email token.', timestamp=True)
-    
+    return {"msg": "Resend email verification."}
+
+#
+#  LOG_OUT USER by user_id
+#
+@router.put("/logout/{user_id}", response_model=schemas.Msg)
+def logout_user(
+    *,
+    db: Session = Depends(deps.get_db),
+    user_id: int,
+    current_superuser: models.User = Depends(deps.get_current_active_superuser),
+    admin_token: str = Body(..., embed=True) 
+) -> Any:
+    '''
+      Admin Action. Log out a given user.
+    '''    
+    user = crud.user.get(db, model_id=user_id)
+
+    return {"msg": f"Logged out user: {user.email}"}
+
+#
+#  LOG_OUT OWN USER
+#
+@router.put("/logout/", response_model=schemas.Msg)
+def logout_me() -> Any:
+    '''
+      Logout own user.
+    '''    
