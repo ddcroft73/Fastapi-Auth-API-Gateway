@@ -5,7 +5,7 @@ from app.database.base_class import Base
 from sqlalchemy import Boolean, Column, Integer, String
 from sqlalchemy.orm import relationship
 from app.database.base_class import Base
-
+import os
 
 class Account(Base):
     id = Column(Integer, primary_key=True, index=True)
@@ -23,5 +23,9 @@ class Account(Base):
     cancellation_reason = Column(String, nullable=True)
     preferred_contact_method = Column(String, default='email')
     timezone = Column(String, nullable=True)  
+    
+    use_2FA = Column(Boolean(), default=False)
+    contact_method_2FA = Column(String, nullable=True)
+    cell_provider_2FA = Column(String, nullable=True)
 
     user = relationship("User", back_populates="account")

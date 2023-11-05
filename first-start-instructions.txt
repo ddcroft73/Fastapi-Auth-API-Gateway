@@ -1,0 +1,16 @@
+
+1. Fill in all the variables in auth-server.env. Mainly the database Constants. Make sure the .env, alembic.ini 
+and the env.py file in the alembic directory all jive. THis is where changes need to be made before production. Can;t
+have "password" for the password. 
+
+* Make any changes to the Migrations in Alembic, and the schema, models, crud if you do.
+
+2. Drop database if needed. 
+
+3. Open a terminal cd to this directory. The project directory. run 'chmod +x start-stack.sh', start the server with ./start-stack.sh
+
+3. Open another terminal and run "chmod +x revision_database.sh", then run revision_database.sh.
+
+4. should be good to go.
+
+

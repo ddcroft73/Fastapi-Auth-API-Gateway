@@ -32,7 +32,9 @@ def upgrade() -> None:
         sa.Column("is_superuser", sa.Boolean(), nullable=True, default=False),
         sa.Column("phone_number", sa.String(), unique=False, nullable=True),
         sa.Column("is_verified", sa.Boolean(), default=False),
-        sa.Column("failed_login_attempts", sa.Integer(), default=0),
+ #       sa.Column("failed_login_attempts", sa.Integer(), default=0),
+        # New
+        sa.Column("cell_provider", sa.String(), unique=False, nullable=True),
     )
     op.create_index(op.f("ix_user_email"), "user", ["email"], unique=True)
     op.create_index(op.f("ix_user_full_name"), "user", ["full_name"], unique=False)
@@ -60,6 +62,10 @@ def upgrade() -> None:
         sa.Column("account_locked", sa.Boolean(), default=False),
         sa.Column("account_locked_reason", sa.String(), nullable=True),
         sa.Column("timezone", sa.String(), nullable=True),
+        # Values for 2FA
+        sa.Column("use_2FA", sa.Boolean(), default=False),
+        sa.Column("contact_method_2FA", sa.String(), nullable=True),
+        sa.Column("cell_provider_2FA", sa.String(), nullable=True),
     )
 
 

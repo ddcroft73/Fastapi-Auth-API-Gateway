@@ -52,7 +52,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             if field in update_data:
                 setattr(db_obj, field, update_data[field])        
 
-       # logzz.debug(f"update_data inside Base {update_data}")
         db.add(db_obj)
         db.commit()
         db.refresh(db_obj)

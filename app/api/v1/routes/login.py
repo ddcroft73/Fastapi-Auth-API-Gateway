@@ -55,6 +55,7 @@ def login_access_token(
     user = crud.user.authenticate(
         db, email=form_data.username, password=form_data.password
     )
+    
 
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
@@ -68,10 +69,23 @@ def login_access_token(
          user_role ='admin'
     else:
         user_role = 'user'
+        
+    # Is this user using 2FA? If so don;t send back the token... send back a mesage to let the client
+    # know to invoke the 2FA.
+    if user.account.use_2FA: 
+        pass
+        #return {"msg": "use_2FA"}
+
+    # The client gets the msg to invoke 2FA, the client sends a request to this server @ get-2fa-code/
+    # acode is generated and sent to the user either by EMail, SMS. and the client will call the UI
+    # component to take the users code input. the code is then sent back to this server @ verify-2fa-code/
+    # If theu match then a token is generat3ed, and sent back to the client. 
 
     return JSONResponse({
         "access_token": security.create_access_token(
-            user.id, user_role, expires_delta=access_token_expires
+            user.id, 
+            user_role, 
+            expires_delta=access_token_expires
         ),
         "token_type": "bearer"
     })
@@ -151,10 +165,6 @@ def verify_email(
 ) -> Any:
     '''
       If all checks out, change is_verified to True.
-      Now... I need to figure ouot how to handle this.... Do I want to point the link to the frontend
-      instead of here, and have the FE query the BE like herer to verify? or... 
-      Do I want to keep it as is, and let this endpoint spawn a page that tells the user what happened,
-      and then let the user click a link to access the froint end to login?
     '''
     email =  verify_emailVerify_token(token)
     if not email:
@@ -182,7 +192,7 @@ def resend_verification(email: EmailStr = Query(...)):
     # Create a new token and send out
     email_token = generate_verifyemail_token(email)
     verify_email(
-        email_to=email, # HARD CODED FOR testing
+        email_to='gen.disarray73@outlook.com',  # user_in.email, HARD CODED FOR testing
         email_username=email,
         token=email_token
     )

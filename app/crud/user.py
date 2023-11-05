@@ -25,8 +25,9 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             is_superuser=obj_in.is_superuser,
             phone_number=obj_in.phone_number,
             is_verified=obj_in.is_verified, 
-            failed_login_attempts=obj_in.failed_login_attempts, 
-            user_uuid=obj_in.user_uuid
+    #        failed_login_attempts=obj_in.failed_login_attempts, 
+            user_uuid=obj_in.user_uuid,
+            cell_provider=obj_in.cell_provider
         )
 
         db.add(db_obj)
@@ -44,8 +45,9 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             is_superuser=obj_in.is_superuser,
             phone_number=obj_in.phone_number,
             is_verified=obj_in.is_verified,
-            failed_login_attempts=obj_in.failed_login_attempts,
-            user_uuid=obj_in.user_uuid
+    #        failed_login_attempts=obj_in.failed_login_attempts,
+            user_uuid=obj_in.user_uuid,
+            cell_provider=obj_in.cell_provider
         )
         db.add(db_obj)
         db.flush()  # add the user but do not commit so I can get back the user.id

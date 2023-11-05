@@ -15,7 +15,8 @@ class User(Base):
     is_active = Column(Boolean(), default=True)
     is_superuser = Column(Boolean(), default=False)
     phone_number = Column(String, unique=False, index=True, nullable=True) 
+    cell_provider = Column(String, unique=False, index=False, nullable=True) 
     is_verified = Column(Boolean(), default=False)
-    failed_login_attempts = Column(Integer, default=0)
+#    failed_login_attempts = Column(Integer, default=0)
 
     account = relationship("Account", uselist=False, back_populates="user")

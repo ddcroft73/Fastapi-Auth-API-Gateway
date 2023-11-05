@@ -8,6 +8,8 @@ services:
       dockerfile: ./backend.dockerfile
     ports:
       - 8015:8000
+    
+    env_file: auth-server.env
     command: uvicorn app.main:app --host 0.0.0.0 --reload
     volumes:
       - .:/app
@@ -26,7 +28,9 @@ services:
   worker:
     build: 
       context: .  # On desktop, change the dockerfile to ./backend.dockerfile.
-      dockerfile: ./backend.dockerfile
+      dockerfile: ./backend.dockerfile    
+    env_file: auth-server.env
+
     command: celery --app background_tasks.tasks worker --loglevel=info --logfile=logs/celery.log
     volumes:
       - .:/app
@@ -40,11 +44,12 @@ services:
 
   db:
     image: postgres:15
-    restart: always
+    restart: always    
+    env_file: auth-server.env
     environment:
-      POSTGRES_PASSWORD: password  # Only for dev purposes. 
+      POSTGRES_PASSWORD: password  
       POSTGRES_DB: users_database
-      POSTGRES_USER: deadMANsSwitch # Name has changed
+      POSTGRES_USER: life_package
     ports:
       - "5432:5432"
     volumes:

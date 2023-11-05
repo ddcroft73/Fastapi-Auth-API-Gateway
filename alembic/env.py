@@ -31,7 +31,7 @@ target_metadata = Base.metadata
 # ... etc.
 
 def get_url():
-    user = os.getenv("POSTGRES_USER", "deadMANsSwitch")
+    user = os.getenv("POSTGRES_USER", "life_package")
     password = os.getenv("POSTGRES_PASSWORD", "password")
     server = os.getenv("POSTGRES_SERVER", "db")
     db = os.getenv("POSTGRES_DB", "users_database")

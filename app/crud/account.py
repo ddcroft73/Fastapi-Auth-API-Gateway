@@ -38,7 +38,11 @@ class CRUDAccount(CRUDBase[Account, AccountCreate, AccountUpdate]):
             cancellation_date=obj_in.cancellation_date,
             cancellation_reason=obj_in.cancellation_reason,
             preferred_contact_method=obj_in.preferred_contact_method,
-            timezone=obj_in.timezone
+            timezone=obj_in.timezone,
+
+            use_2FA=obj_in.use_2FA,
+            contact_method_2FA=obj_in.contact_method_2FA,
+            cell_provider_2FA=obj_in.cell_provider_2FA
         )
         db.add(db_obj)
         db.commit()
@@ -61,7 +65,11 @@ class CRUDAccount(CRUDBase[Account, AccountCreate, AccountUpdate]):
             cancellation_date=obj_in.cancellation_date,
             cancellation_reason=obj_in.cancellation_reason,
             preferred_contact_method=obj_in.preferred_contact_method,
-            timezone=obj_in.timezone
+            timezone=obj_in.timezone,
+            
+            use_2FA=obj_in.use_2FA,
+            contact_method_2FA=obj_in.contact_method_2FA,
+            cell_provider_2FA=obj_in.cell_provider_2FA
         )
         db.add(db_obj)
         db.flush()

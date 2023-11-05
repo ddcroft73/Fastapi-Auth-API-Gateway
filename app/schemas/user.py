@@ -12,8 +12,9 @@ class UserBase(BaseModel):
     is_active: Optional[bool] = True
     full_name: Optional[str] = None
     phone_number: Optional[str] = None
+    cell_provider: Optional[str] = None
     is_verified: Optional[bool] = False
-    failed_login_attempts: Optional[int] = 0
+#    failed_login_attempts: Optional[int] = 0
 
 
 # Properties to receive via API on creation

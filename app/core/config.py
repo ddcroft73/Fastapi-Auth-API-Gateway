@@ -3,7 +3,6 @@ from pydantic import BaseSettings
 from typing import Any, Dict, List, Optional, Union
 from pydantic import AnyHttpUrl, BaseSettings, EmailStr, HttpUrl, PostgresDsn, validator
 
-
 class Settings(BaseSettings):
 
     API_V1_STR: str = "/api/v1"
@@ -49,6 +48,7 @@ class Settings(BaseSettings):
             host=values.get("POSTGRES_SERVER"),
             path=f"/{values.get('POSTGRES_DB') or ''}",
         )
+    
 
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 # 7 days
     EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 24
@@ -72,8 +72,6 @@ class Settings(BaseSettings):
     # This data is added to the API_KEY in order to create the Admin Token. This ensures that the Admin token is totally
     # diffferent than a normal "user" token that is issued with succesful login. This effectively chnages to another API Key
     ADMIN_API_KEY: str = 'HDG673L2MNDUI76E'
-
-    class Config:
-        env_file = "../auth-server.env"
-
+    
+  
 settings = Settings()
