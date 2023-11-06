@@ -62,6 +62,3 @@ def get_current_active_superuser(
         )
     return current_user
 
-
-def verify_admin_token(token: str) -> bool:
-    return True

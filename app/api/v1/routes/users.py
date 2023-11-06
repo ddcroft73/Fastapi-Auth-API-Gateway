@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from app import crud, models, schemas
 
 from app.api import deps
+from app.core import security
 from app.core.config import settings
 from app.mail_utils import (
      verify_email, 
@@ -29,7 +30,7 @@ router = APIRouter()
 
 
 # api/v1/users/me
-@router.get("/me", response_model=schemas.UserAccount)
+@router.get("/me", response_model=Union[schemas.UserAccount, schemas.Msg])
 def read_user_me(
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
@@ -42,6 +43,8 @@ def read_user_me(
 
     user_data_encoded = jsonable_encoder(current_user)
     account_data_encoded = jsonable_encoder(account)
+    
+    
     return schemas.UserAccount(user=user_data_encoded, account=account_data_encoded)
 
 
@@ -234,7 +237,7 @@ def update_user(
     Update a user. SuperUser action. 
     """
     try:
-        if not deps.verify_admin_token(admin_token):
+        if not security.verify_admin_token(admin_token):
             raise HTTPException(status_code=403, detail="Admin token invalid")    
         
         user = crud.user.get(db, model_id=user_id)
@@ -311,7 +314,7 @@ def create_user_open(
 
 
 #/api/v1/users/{user_id}
-@router.get("/{user_id}", response_model=schemas.UserAccount)
+@router.get("/{user_id}", response_model=Union[schemas.UserAccount, schemas.Msg])
 def read_user_by_id(
     user_id: int,
     current_user: models.User = Depends(deps.get_current_active_superuser),
@@ -327,13 +330,37 @@ def read_user_by_id(
     user_data_encoded = jsonable_encoder(user)
     account_data_encoded = jsonable_encoder(account)
 
+    if user == None and account == None:
+        return {"msg": "That record does not exist"}
+    if user == None or account == None:
+        return {"msg": "Either user or account are corrupt."}
+
     return schemas.UserAccount(user=user_data_encoded, account=account_data_encoded)        
     
  
 
 @router.delete("/delete/{user_id}", response_model=schemas.Msg)
-def delete_user() -> Any:
+def delete_user(
+    user_id: int,
+    current_superuser: models.User = Depends(deps.get_current_active_superuser),
+    db: Session = Depends(deps.get_db),
+    admin_token: str = Body(..., embed=True)
+) -> Any:
     '''
     Delete a user from the system. Super user action.
     '''
-    pass
+    
+    if not security.verify_admin_token(admin_token):
+        raise HTTPException(status_code=403, detail="Admin token invalid")    
+    
+    user = crud.user.get(db, model_id=user_id)
+
+    if not user:
+        raise HTTPException(
+                status_code=404,
+                detail="The user with this username does not exists in the system",
+            )
+    
+    crud.user.remove(db, model_id=user_id)
+
+    return {"msg": f"Deleted user: {user.email}"}
