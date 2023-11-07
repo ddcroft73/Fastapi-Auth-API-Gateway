@@ -244,12 +244,12 @@ def get_2FA_code():
     '''
       Generates a 2FA code.
       Code should be 6 Characters letters and numbers
-      ex. B5R922 or XXRXNR, etc.
+      ex. B5R-922 or XXR-XNR, etc.
     '''    
     characters = string.ascii_uppercase + "0123456789"
-    code_2FA = "".join(choice(characters) for _ in range(6))     
-     
-    return {"code": code_2FA}
+    code_2FA = "".join(choice(characters) for _ in range(6))  
+        
+    return {"code": f'{code_2FA[0:3]}-{code_2FA[3:]}'}
 
 
 @router.get("/2FA/verify-2FA-code/{code}", response_model=schemas.Msg)
