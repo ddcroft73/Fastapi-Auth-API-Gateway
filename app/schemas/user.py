@@ -14,6 +14,7 @@ class UserBase(BaseModel):
     phone_number: Optional[str] = None
     cell_provider: Optional[str] = None
     is_verified: Optional[bool] = False
+    is_loggedin: Optional[bool] = False
 #    failed_login_attempts: Optional[int] = 0
 
 

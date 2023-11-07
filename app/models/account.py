@@ -27,5 +27,6 @@ class Account(Base):
     use_2FA = Column(Boolean(), default=False)
     contact_method_2FA = Column(String, nullable=True)
     cell_provider_2FA = Column(String, nullable=True)
+    last_logout_date = Column(DateTime(timezone=True), nullable=True)
 
     user = relationship("User", back_populates="account")

@@ -32,7 +32,7 @@ def upgrade() -> None:
         sa.Column("is_superuser", sa.Boolean(), nullable=True, default=False),
         sa.Column("phone_number", sa.String(), unique=False, nullable=True),
         sa.Column("is_verified", sa.Boolean(), default=False),
- #       sa.Column("failed_login_attempts", sa.Integer(), default=0),
+        
         # New
         sa.Column("cell_provider", sa.String(), unique=False, nullable=True),
     )

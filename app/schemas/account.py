@@ -10,6 +10,8 @@ class AccountBase(BaseModel):
     creation_date:  Union[datetime, str, None] = Field(None, example="01/23/2022")
     subscription_type: str = 'free' # free, basic, premium, maybe one other. Need to figure this out
     last_login_date:  Union[datetime, str, None] = Field(None, example="01/23/2022")   # Has not logged in yet, None is valid at creation
+    last_logout_date: Union[datetime, str, None] = Field(None, example="01/23/2022")
+    
     bill_renew_date:  Union[datetime, str, None] = Field(None, example="01/23/2022")  # Dont know, free account None should be fine.
     auto_bill_renewal: bool = False
 

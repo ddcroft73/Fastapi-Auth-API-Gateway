@@ -42,7 +42,8 @@ class CRUDAccount(CRUDBase[Account, AccountCreate, AccountUpdate]):
 
             use_2FA=obj_in.use_2FA,
             contact_method_2FA=obj_in.contact_method_2FA,
-            cell_provider_2FA=obj_in.cell_provider_2FA
+            cell_provider_2FA=obj_in.cell_provider_2FA,
+            last_logout_date=obj_in.last_logout_date
         )
         db.add(db_obj)
         db.commit()
@@ -69,7 +70,8 @@ class CRUDAccount(CRUDBase[Account, AccountCreate, AccountUpdate]):
             
             use_2FA=obj_in.use_2FA,
             contact_method_2FA=obj_in.contact_method_2FA,
-            cell_provider_2FA=obj_in.cell_provider_2FA
+            cell_provider_2FA=obj_in.cell_provider_2FA,
+            last_logout_date=obj_in.last_logout_date
         )
         db.add(db_obj)
         db.flush()

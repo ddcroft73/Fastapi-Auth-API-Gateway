@@ -1,5 +1,7 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 from typing import Any
+import string
+from random import randint 
 
 from fastapi import (
     APIRouter, 
@@ -12,6 +14,7 @@ from fastapi import (
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 
+from fastapi.encoders import jsonable_encoder
 
 from sqlalchemy.orm import Session
 from pydantic.networks import EmailStr
@@ -46,16 +49,22 @@ def login_access_token(
     WHen a user logs in, an access token is generated and returned if the credintials
     check out. The user will not have to login again until the token expires
     """
-    # Expand on this.. Maybe even log all the logins.
-    client_host = request.client.host
-    logzz.login(f'{client_host}  logged in @: ', timestamp=1)    
+    def save_login_information() -> None:
+        current_time = str = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
+        account = models.Account = crud.account.get_by_user_id(db, user_id=user.id)
+
+        account.last_login_date = current_time
+        user.is_loggedin = True
+
+        db.add(user)
+        db.add(account)
+        db.commit()
 
     user_role: str
 
     user = crud.user.authenticate(
         db, email=form_data.username, password=form_data.password
     )    
-
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     elif not crud.user.is_active(user):
@@ -67,15 +76,17 @@ def login_access_token(
          user_role ='admin'
     else:
         user_role = 'user'
-        
-    # Is this user using 2FA? If so don;t send back the token... send back a mesage to let the client
+
+    save_login_information()    
+
+    # Is this user using 2FA? If so don;t send back the token... send back a message to let the client
     # know to invoke the 2FA.
     if user.account.use_2FA: 
         pass
         #return {"msg": "use_2FA"}   
 
     # The client gets the msg to invoke 2FA, the client sends a request to this server @ get-2fa-code/
-    # acode is generated and sent to the user either by EMail, SMS. and the client will call the UI
+    # a code is generated and sent to the user either by EMail, SMS. and the client will call the UI
     # component to take the users code input. the code is then sent back to this server @ verify-2fa-code/
     # If theu match then a token is generat3ed, and sent back to the client. 
 
@@ -202,7 +213,7 @@ def resend_verification(email: EmailStr = Query(...)):
 #
 #  LOG_OUT USER by user_id
 #
-@router.put("/logout/{user_id}", response_model=schemas.Msg)
+@router.put("/logout/{user_id}", response_model=schemas.UserAccount)
 def logout_user(
     *,
     db: Session = Depends(deps.get_db),
@@ -213,15 +224,41 @@ def logout_user(
     '''
       Admin Action. Log out a given user.
     '''    
+    if not security.verify_admin_token(admin_token):
+        raise HTTPException(status_code=400, detail="Invalid Admin Token.")
+    
     user = crud.user.get(db, model_id=user_id)
+    user.is_loggedin = False
 
-    return {"msg": f"Logged out user: {user.email}"}
+    db.add(user) 
+    db.commit()
+    
+    return schemas.UserAccount(
+        user=jsonable_encoder(user), 
+        account=jsonable_encoder(user.account)
+    ) 
 
-#
-#  LOG_OUT OWN USER
-#
-@router.put("/logout/", response_model=schemas.Msg)
-def logout_me() -> Any:
+
+@router.get("/2FA/get-2FA-code/", response_model=schemas.TwoFactorAuth)
+def get_2FA_code():
     '''
-      Logout own user.
+      Generates a 2FA code.
+      Code should be 6 Characters letters and numbers
+      ex. B5R922 or XXRXNR, etc.
+    '''    
+    upper_alph: str = list(string.ascii_uppercase)
+    for i in range(len(upper_alph)):    
+        if i %2==0: 
+            upper_alph[i] = str(randint(0,9))
+    upper_alph = "".join(upper_alph)
+    code_2FA = [upper_alph[randint(0,len(upper_alph))] for _ in range(6)]
+    code_2FA = "".join(code_2FA)   
+    return {"code": code_2FA}
+
+
+@router.get("/2FA/verify-2FA-code/{code}", response_model=schemas.Msg)
+def verify_2FA_code(
+    code_2FA: str
+):
+    '''
     '''    

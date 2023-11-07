@@ -38,8 +38,8 @@ def read_user_me(
     """
     Get current user.
     """
-    #account: models.Account = crud.account.get_by_user_id(db, user_id=user_id)
-    account: models.Account = current_user.account
+    account: models.Account = crud.account.get_by_user_id(db, user_id=current_user.id)
+    #account: models.Account = current_user.account
 
     user_data_encoded = jsonable_encoder(current_user)
     account_data_encoded = jsonable_encoder(account)
@@ -223,7 +223,7 @@ def update_user_me(
 
 #NEED figure out why the second update (account) does not save. User only saves, and account will if i change the order
 # and then user will not...
-@router.put("/update/{user_id}", response_model=schemas.UserAccount)
+@router.put("/update/{user_id}", response_model=Union[schemas.UserAccount, schemas.Msg])
 def update_user(
     *,
     db: Session = Depends(deps.get_db),
@@ -243,6 +243,8 @@ def update_user(
         user = crud.user.get(db, model_id=user_id)
         account = crud.account.get_by_user_id(db, user_id=user.id)#user.account
         
+        if user == None or account == None:
+            return {"msg": "That user account does not exist."}
         
         if not user:
             raise HTTPException(
