@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime
 from typing import Any
 import string
-from random import randint 
+from random import randint , choice
 
 from fastapi import (
     APIRouter, 
@@ -246,13 +246,9 @@ def get_2FA_code():
       Code should be 6 Characters letters and numbers
       ex. B5R922 or XXRXNR, etc.
     '''    
-    upper_alph: str = list(string.ascii_uppercase)
-    for i in range(len(upper_alph)):    
-        if i %2==0: 
-            upper_alph[i] = str(randint(0,9))
-    upper_alph = "".join(upper_alph)
-    code_2FA = [upper_alph[randint(0,len(upper_alph))] for _ in range(6)]
-    code_2FA = "".join(code_2FA)   
+    characters = string.ascii_uppercase + "0123456789"
+    code_2FA = "".join(choice(characters) for _ in range(6))     
+     
     return {"code": code_2FA}
 
 
