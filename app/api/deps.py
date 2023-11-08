@@ -3,6 +3,7 @@ from typing import Generator
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
+from jose.exceptions import ExpiredSignatureError, JWTError
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
@@ -29,11 +30,17 @@ def get_current_user(
 ) -> models.User:
     try:
         payload = jwt.decode(
-            token, settings.API_KEY, algorithms=[security.ALGORITHM]
+            token, settings.API_KEY, algorithms=[settings.ALGORITHM]
         )
         token_data = schemas.TokenPayload(**payload)
-
-    except (jwt.JWTError, ValidationError):
+    
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired"
+        )
+    
+    except (JWTError, ValidationError):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials",

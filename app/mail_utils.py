@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 from app import schemas
 from jose import jwt
+from jose.exceptions import ExpiredSignatureError, JWTError
 import requests
 from app.core.config import settings
 from app.utils.api_logger import logzz
@@ -30,6 +31,8 @@ def send_email(email: schemas.Email, token: str) -> None:
     # Check the response to make sure all is well, If not log as error
     logzz.debug(f"Response from send_email() {response.json()}")
 
+def send_sms(msg: str, cell_number: str, token: str) -> None:
+    ''''''
 
 def verify_email(email_to: str, email_username: str, token: str) -> None:
     '''
@@ -85,7 +88,7 @@ def generate_password_reset_token(email: EmailStr) -> str:
          "exp": exp, 
          "nbf": now, 
          "email": email 
-        }, settings.API_KEY, algorithm="HS256",
+        }, settings.API_KEY, settings.ALGORITHM,
     )
     return encoded_jwt
 
@@ -94,6 +97,7 @@ def verify_password_reset_token(token: str) -> Optional[str]:
     try:
         decoded_token = jwt.decode(token, settings.API_KEY, algorithms=["HS256"])
         return decoded_token["email"]
+    
     except jwt.JWTError:
         return None
     
@@ -102,3 +106,4 @@ def generate_verifyemail_token(email: EmailStr) -> str:
 
 def verify_emailVerify_token(token: str) ->  Optional[str]:
     return verify_password_reset_token(token)
+
