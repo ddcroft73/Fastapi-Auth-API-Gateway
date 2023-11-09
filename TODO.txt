@@ -1,9 +1,9 @@
 ## Move failed_login_attempts out the DB and use Redis to save it in memory. Its faster that way. 
 ## Add account data to the create_user_open endpoint
-## Add an endpoint to delete users.
+## Add an endpoint to delete users. DONE
 
-## Need to implement the admin token Dependency on the superUser endpoints!!
-# Consult AI on how to pas the token into the verify_admin_token function
+## Need to implement the admin token Dependency on the superUser endpoints!! WORKING
+
 
 changed the env file to auth-server.env and added it to the yaml file
 Added some new fields to the user and account tables to implement 2FA
@@ -13,9 +13,10 @@ Fixed the init_db_code
 Began to code in the 2Fa framework.
 Testing the CreateUser, update_me, getAllUsers, get user by id, update by id
 
-ISSUES:
-   There is still an isssue with the update. with update by id, the account is not saving as it used to do
-   and with update_me. it doesnt always save the account info.
 
-Need tocreate some templates for password recovery
-Need to implement 2FA, endpoints, etc.
+Need to create some templates for password recovery... working
+Need to implement 2FA, endpoints, etc.... working
+
+WORK ON 2FA
+work on generating and verifying the admin token.. What should it encode?
+Get it to send 2FA code and verify the code. 

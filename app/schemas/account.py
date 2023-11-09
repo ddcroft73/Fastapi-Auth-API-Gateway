@@ -1,7 +1,6 @@
 from typing import Optional, Union
 from pydantic import BaseModel, EmailStr, Field, validator
 from datetime import datetime
-from app.utils.api_logger import logzz
 import re
 
 # Shared properties

@@ -41,7 +41,7 @@ router = APIRouter()
 #
 #/api/v1/auth/login/access-token
 #
-@router.post("/login/access-token", response_model=Union[schemas.Token, schemas.Msg])
+@router.post("/login/access-token", response_model=Union[schemas.Token, schemas.TwoFactorAuth])
 def login_access_token(
     request: Request,
     db: Session = Depends(deps.get_db), 
@@ -84,15 +84,24 @@ def login_access_token(
 
     # Is this user using 2FA? If so don;t send back the token... send back a message to let the client
     # know to invoke the 2FA.
-    if user.account.use_2FA: 
-        pass
-        #return schemas.Msg(msg="use_2FA")
+    if user.account.use_2FA:         
+        token_2FA: schemas.TwoFactorAuth = security.send_2FA_code(    # COMMENTED OUT FOR TESTING
+            user.id, 
+            user.email, 
+            user.phone_number,  
+            user.account.contact_method_2FA
+        )   
+        return schemas.TwoFactorAuth(code=token_2FA.code, token=token_2FA.token)
 
     # The client gets the msg to invoke 2FA, the client sends a request to this server @ get-2fa-code/
     # a code is generated and sent to the user either by EMail, SMS. and the client will call the UI
     # component to take the users code input. the code is then sent back to this server @ verify-2fa-code/
     # If theu match THEN the token is generat3ed, and sent back to the client. 
-    token: str = security.create_access_token(user.id, user_role, expires_delta=access_token_expires)
+    token: str = security.create_access_token(
+        user.id, 
+        user_role, 
+        expires_delta=access_token_expires
+    )
     return schemas.Token(access_token=token, token_type="bearer")
         
 
@@ -104,7 +113,6 @@ def test_token(current_user: models.User = Depends(deps.get_current_user)) -> An
     """
     Test access token
     """
-
     return current_user
 #
 #/api/v1/auth/login/password-recovery/{email}
@@ -127,7 +135,7 @@ def recover_password(email: str, db: Session = Depends(deps.get_db)) -> Any:
     send_reset_password_email(
         email_to=user.email, email=email, token=password_reset_token
     )
-    return JSONResponse({"msg": "Password recovery email sent"})
+    return {"msg": "Password recovery email sent"}
 
 #
 #/api/v1/auth/reset-password/
@@ -162,7 +170,7 @@ def reset_password(
     db.add(user)
     db.commit()
     logzz.info(f'User: {email} changed password.', timestamp=True)
-    return JSONResponse({"result": "Password updated successfully."})
+    return {"msg": "Password updated successfully."}
 
 
 
@@ -192,7 +200,7 @@ def verify_email(
     db.add(user)
     db.commit()    
     logzz.info(f'Email verified for: {user.email}', timestamp=True)
-    return JSONResponse({"result": "Email Verified. User Ok to login"})
+    return {"msg": "Email Verified. User Ok to login"}
 
 
 @router.put("/resend-verification/", response_model=schemas.Msg)
@@ -236,70 +244,43 @@ def logout_user(
     ) 
 
 
-@router.get("/2FA/get-2FA-code/", response_model=schemas.TwoFactorAuth)
-def get_2FA_code(
-    *,
-    db: Session = Depends(deps.get_db),
-    email_account: str,                           # The email the user signed up with
-    email_for_2FA: Optional[str] = None,           # The emal being used for 2FA
-    cell_number: Optional[str] = None,            # cell for sms
-)-> Any:
-    '''
-      Generates and sends a 2FA code to the user via sms or email.
-    '''      
-    def generate_2FA_code() -> str:
-        '''
-        Generates a 2FA code.
-        Code should be 6 Characters letters and numbers
-        ex. B5R-922 or XXR-XNR, etc.
-        '''  
-        characters = string.ascii_uppercase + "0123456789"
-        code_2FA = "".join(choice(characters) if pos != 3 else "-"  for pos in range(7)) 
-        return code_2FA
-     
-    code: str = generate_2FA_code()
-    tmp_token: str = generate_singleuse_token(email_account, settings.TWO_FACTOR_AUTH_EXPIRE_MINUTES)
-
-    if cell_number is not None:
-        message: str = (f"Your {settings.PROJECT_NAME} verification code is: {code} "
-                        f"\nThis code will expire in {settings.TWO_FACTOR_AUTH_EXPIRE_MINUTES} minutes. "
-                        "Do not share this code with anyone.")
-        send_sms(message, cell_number, tmp_token)
-
-    elif email_for_2FA is not None:
-        email_obj = schemas.Email(
-            email_to="life.package.web@gmail.com", # email_for_2FA
-            email_from=settings.EMAIL_FROM,
-            subject="Two Factor Authentication Code from Life Package",
-            message=build_template_2FA_code(code_2FA=code, email=email_for_2FA),
-            user_id=email_account
-        )
-        send_email(email_obj, tmp_token)
-
-    return schemas.TwoFactorAuth(code=code) #{"code": code} # return the code to da client...
-
-
-@router.get("/2FA/verify-2FA-code/", response_model=Union[schemas.Token, str])
+@router.put("/2FA/verify-2FA-code/", response_model=Union[schemas.Token, str])
 def verify_2FA_code(
     *,
     db: Session = Depends(deps.get_db),
-    current_user:  models.User = Depends(deps.get_current_active_user),
-    timed_token: str = Query(...), 
+    code_2FA: str = Body(...),
+    code_user: str = Body(...), 
+    email_account: str = Body(...),
+    timed_token: str = Body(...),
+    
 ) -> Any:
     '''
     '''    
-    if crud.user.is_superuser(current_user):
-         user_role ='admin'
+    # check 2FA token for expiration the, 
+    if not security.verify_token(timed_token):
+        raise HTTPException(status_code=400, detail="Invalid Token")
+    
+    # verify thr code
+    if not security.verify_2FA(code_2FA, code_user):
+        pass
+
+
+    # get the user associatwd with the email address
+    user = crud.user.get_by_email(db, email=email_account)
+    if crud.user.is_superuser(user):
+        user_role ='admin'
     else:
         user_role = 'user'
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
-
+        
     return {
         "access_token": security.create_access_token(
-            current_user.id, 
+            user.id, 
             user_role, 
             expires_delta=access_token_expires
         ),
         "token_type": "bearer"
     }
+    
+

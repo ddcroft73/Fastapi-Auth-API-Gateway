@@ -6,7 +6,6 @@ from jose import jwt
 from jose.exceptions import ExpiredSignatureError, JWTError
 import requests
 from app.core.config import settings
-from app.utils.api_logger import logzz
 from pydantic.networks import EmailStr
 
 # I need to come up with a more secure way to communicate with the email service. Just a token
@@ -28,8 +27,6 @@ def send_email(email: schemas.Email, token: str) -> None:
             headers=headers, 
             json=email.dict()
         )
-    # Check the response to make sure all is well, If not log as error
-    logzz.debug(f"Response from send_email() {response.json()}")
 
 def send_sms(msg: str, cell_number: str, token: str) -> None:
     ''''''
