@@ -6,12 +6,13 @@ from jose import jwt
 from jose.exceptions import ExpiredSignatureError, JWTError
 import requests
 from app.core.config import settings
+from app.utils.api_logger import logzz
 from pydantic.networks import EmailStr
 
 # I need to come up with a more secure way to communicate with the email service. Just a token
 # is not good enough
 
-def send_email(email: schemas.Email, token: str) -> None:   
+async def send_email(email: schemas.Email, token: str) -> None:   
     '''
     Sends a request to the Notification API, to send an Email
     '''
@@ -21,17 +22,21 @@ def send_email(email: schemas.Email, token: str) -> None:
         'Authorization': f'Bearer {token}',
         'Content-Type': 'application/json'
     }
+
+    logzz.info(f'url: {url} Header: {headers}, Email: {email.dict()}', timestamp=True)
+    
     response = requests.request(
             "POST", 
             url, 
             headers=headers, 
             json=email.dict()
         )
+    return response.json()
 
-def send_sms(msg: str, cell_number: str, token: str) -> None:
+async def send_sms(msg: str, cell_number: str, token: str) -> None:
     ''''''
 
-def verify_email(email_to: str, email_username: str, token: str) -> None:
+async def verify_email(email_to: str, email_username: str, token: str) -> None:
     '''
     send user an email. They need to click the embedded link to verify
     '''
@@ -52,9 +57,9 @@ def verify_email(email_to: str, email_username: str, token: str) -> None:
         message=build_template_verify(link, project_name), # This is the HTML for the message
         user_id=email_username
     )
-    send_email(verify_Email, token)
+    await send_email(verify_Email, token)
 
-def send_reset_password_email(email_to: str, email_username: str, token: str) -> None:
+async def send_reset_password_email(email_to: str, email_username: str, token: str) -> None:
     project_name = settings.PROJECT_NAME
     subject = f"{project_name} - Password recovery for user {email_username}"
     server_host = settings.SERVER_HOST    
@@ -69,12 +74,12 @@ def send_reset_password_email(email_to: str, email_username: str, token: str) ->
         message=build_template_reset(link, project_name), # This is the HTML for the message
         user_id=email_username
     )     
-    send_email(reset_password, token)
+    await send_email(reset_password, token)
     
 
 def generate_password_reset_token(email: EmailStr) -> str:
     '''
-     ...this is pretty self explanatory
+     creates tokens used for password recovery and email verification
     '''
     delta = timedelta(hours=settings.EMAIL_RESET_TOKEN_EXPIRE_HOURS)
     now = datetime.utcnow()
@@ -97,6 +102,7 @@ def verify_password_reset_token(token: str) -> Optional[str]:
     
     except jwt.JWTError:
         return None
+    
     
 def generate_verifyemail_token(email: EmailStr) -> str:
    return generate_password_reset_token(email)

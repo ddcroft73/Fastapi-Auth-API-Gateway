@@ -14,6 +14,8 @@ from pydantic import ValidationError
 
 from app.database.session import SessionLocal
 
+from app.utils.api_logger import logzz
+
 from app import schemas
 from app.email_templates.email_2FA_code import build_template_2FA_code
 from app.mail_utils import send_email, send_sms
@@ -31,7 +33,7 @@ def create_access_token(
         expire = datetime.utcnow() + timedelta(
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
-    current_date: str = datetime.now().strftime('%m/%d/%Y')
+    current_date: str = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
     to_encode = {
         "exp": expire, 
         "sub": str(subject), 
@@ -79,25 +81,40 @@ def generate_singleuse_token(user_id: int, expire_minutes: int = 2) -> str:
     return encoded_jwt
 
 
-def verify_2FA():
-    return
+def verify_2FA(users_code: str, real_code: str):
+    '''
+      Compares the token from the User and the token that was created to see if match
+      The users code should be formatted with a - at the 4th place, and upper case
+      
+    '''    
+    users_code = f'{users_code[0:3].upper()}-{users_code[3:].upper()}'
+    if users_code != real_code:
+        return False
+    return True
 
 
 def verify_token(token: str) -> bool:
     '''
-      Verifies a token in the most basic way. Is it from this system, and has it expired.
+    another verify password function. I have 3.. lol one is embedded in get_curent_user
+    one is for email verification and password reset, adn this one for 2FA stuff. But they
+    really all do the same thing. 
+
+    should refactor it but it makes the actual coding easier, using dedicated verification 
+    oever this one returns true and not a toe
+
     '''
     try:
         payload = jwt.decode(
-                token, settings.API_KEY, algorithms=[settings.ALGORITHM]
-            )
-        
+            token, settings.API_KEY, algorithms=[settings.ALGORITHM]
+        )  
+
     except (JWTError, ValidationError):
         return False    
+    
     return True
 
 
-def send_2FA_code(
+async def send_2FA_code(
     user_id: int ,        
     user_email: str,           
     user_phone_number: str,  
@@ -133,12 +150,12 @@ def send_2FA_code(
 
     elif contact_method_2FA == "email":
         email_obj = schemas.Email(
-            email_to="life.package.web@gmail.com", # email_for_2FA
+            email_to=user_email, 
             email_from=settings.EMAIL_FROM,
             subject="Two Factor Authentication Code from Life Package",
-            message=build_template_2FA_code(code_2FA=code_2FA, email=user_email),
+            message=code_2FA, #build_template_2FA_code(code_2FA=code_2FA, email=user_email),
             user_id=user_email
         )
-        send_email(email_obj, token_2FA)       
+        await send_email(email_obj, token_2FA)       
     
     return schemas.TwoFactorAuth(code=code_2FA, token=token_2FA) 

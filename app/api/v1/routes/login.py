@@ -42,7 +42,7 @@ router = APIRouter()
 #/api/v1/auth/login/access-token
 #
 @router.post("/login/access-token", response_model=Union[schemas.Token, schemas.TwoFactorAuth])
-def login_access_token(
+async def login_access_token(
     request: Request,
     db: Session = Depends(deps.get_db), 
     form_data: OAuth2PasswordRequestForm = Depends()
@@ -53,7 +53,7 @@ def login_access_token(
     check out. The user will not have to login again until the token expires
     """
     def save_login_information() -> None:
-        current_time = str = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
+        current_time: str = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
         account = models.Account = crud.account.get_by_user_id(db, user_id=user.id)
 
         account.last_login_date = current_time
@@ -62,41 +62,34 @@ def login_access_token(
         db.add(user)
         db.add(account)
         db.commit()
-
-    user_role: str
-
-    user = crud.user.authenticate(
+     
+    user: models.User = crud.user.authenticate(
         db, email=form_data.username, password=form_data.password
-    )    
+    )        
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     elif not crud.user.is_active(user):
         raise HTTPException(status_code=400, detail="Inactive user")
     
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    
-    if crud.user.is_superuser(user):
-         user_role ='admin'
-    else:
-        user_role = 'user'
-
     save_login_information()    
 
-    # Is this user using 2FA? If so don;t send back the token... send back a message to let the client
-    # know to invoke the 2FA.
-    if user.account.use_2FA:         
-        token_2FA: schemas.TwoFactorAuth = security.send_2FA_code(    # COMMENTED OUT FOR TESTING
+    if user.account.use_2FA:      
+        token_2FA: schemas.TwoFactorAuth = await security.send_2FA_code(    
             user.id, 
             user.email, 
             user.phone_number,  
             user.account.contact_method_2FA
         )   
         return schemas.TwoFactorAuth(code=token_2FA.code, token=token_2FA.token)
+    # 
+    # set the expire time and the user role to be encoded
+    #
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)    
+    if crud.user.is_superuser(user):
+         user_role ='admin'
+    else:
+        user_role = 'user'
 
-    # The client gets the msg to invoke 2FA, the client sends a request to this server @ get-2fa-code/
-    # a code is generated and sent to the user either by EMail, SMS. and the client will call the UI
-    # component to take the users code input. the code is then sent back to this server @ verify-2fa-code/
-    # If theu match THEN the token is generat3ed, and sent back to the client. 
     token: str = security.create_access_token(
         user.id, 
         user_role, 
@@ -118,7 +111,7 @@ def test_token(current_user: models.User = Depends(deps.get_current_user)) -> An
 #/api/v1/auth/login/password-recovery/{email}
 #
 @router.post("/password-recovery/{email}", response_model=schemas.Msg)
-def recover_password(email: str, db: Session = Depends(deps.get_db)) -> Any:
+async def recover_password(email: str, db: Session = Depends(deps.get_db)) -> Any:
     """
     Password Recovery:
     If the user is in the system,  Then they will be
@@ -132,7 +125,7 @@ def recover_password(email: str, db: Session = Depends(deps.get_db)) -> Any:
             detail="The user with this username does not exist in the system.",
         )    
     password_reset_token = generate_password_reset_token(email=email)
-    send_reset_password_email(
+    await send_reset_password_email(
         email_to=user.email, email=email, token=password_reset_token
     )
     return {"msg": "Password recovery email sent"}
@@ -169,6 +162,7 @@ def reset_password(
 
     db.add(user)
     db.commit()
+
     logzz.info(f'User: {email} changed password.', timestamp=True)
     return {"msg": "Password updated successfully."}
 
@@ -199,15 +193,16 @@ def verify_email(
     
     db.add(user)
     db.commit()    
+
     logzz.info(f'Email verified for: {user.email}', timestamp=True)
     return {"msg": "Email Verified. User Ok to login"}
 
 
 @router.put("/resend-verification/", response_model=schemas.Msg)
-def resend_verification(email: EmailStr = Query(...)):
+async def resend_verification(email: EmailStr = Query(...)):
     # Create a new token and send out
     email_token = generate_verifyemail_token(email)
-    verify_email(
+    await verify_email(
         email_to='gen.disarray73@outlook.com',  # user_in.email, HARD CODED FOR testing
         email_username=email,
         token=email_token
@@ -255,25 +250,25 @@ def verify_2FA_code(
     
 ) -> Any:
     '''
+      Verifies the code the user input for 2FA. 
     '''    
-    # check 2FA token for expiration the, 
+    # check 2FA token for expiration... user gets 10 minutes to enter the fucking code... goddamnit! 
     if not security.verify_token(timed_token):
-        raise HTTPException(status_code=400, detail="Invalid Token")
+        raise HTTPException(status_code=400, detail="Invalid Token.")
     
-    # verify thr code
+    # verify the code
     if not security.verify_2FA(code_2FA, code_user):
-        pass
+        raise HTTPException(status_code=400, detail="Invalid Two Factor Auth code.")
 
 
-    # get the user associatwd with the email address
     user = crud.user.get_by_email(db, email=email_account)
     if crud.user.is_superuser(user):
         user_role ='admin'
     else:
         user_role = 'user'
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-
         
+    # in da house, send em a token.  You got 7 days mfr.
     return {
         "access_token": security.create_access_token(
             user.id, 

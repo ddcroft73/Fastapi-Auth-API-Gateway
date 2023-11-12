@@ -30,7 +30,7 @@ router = APIRouter()
 
 
 # api/v1/users/me
-@router.get("/me", response_model=Union[schemas.UserAccount, schemas.Msg])
+@router.get("/me", response_model=schemas.UserAccount)
 def read_user_me(
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
@@ -39,16 +39,13 @@ def read_user_me(
     Get current user.
     """
     account: models.Account = crud.account.get_by_user_id(db, user_id=current_user.id)
-    #account: models.Account = current_user.account
 
     user_data_encoded = jsonable_encoder(current_user)
-    account_data_encoded = jsonable_encoder(account)
-    
+    account_data_encoded = jsonable_encoder(account)    
     
     return schemas.UserAccount(user=user_data_encoded, account=account_data_encoded)
 
-
-# api/v1/
+# api/v1/users/
 @router.get("/", response_model=List[schemas.UserAccount])
 def read_users(
     request: Request,
@@ -75,12 +72,41 @@ def read_users(
             user=user_data_encoded, 
             account=account_data_encoded)
         )
+        
     return user_data 
+
+
+# get user by email
+@router.get("/user-by/{email}", response_model=schemas.UserAccount)
+def user_by_email( 
+    *,
+    db: Session = Depends(deps.get_db),
+    super_user: models.User = Depends(deps.get_current_active_superuser),
+    email: str,   
+    admin_token: str = Body(..., embed=True) 
+) -> Any:
+    '''
+    Get a user by their email.
+
+    d3d
+    '''
+    if not security.verify_admin_token(admin_token):
+        raise HTTPException(status_code=400, detail="Invalid Token")
+    
+    user = crud.user.get_by_email(db,email=email)
+    if not user:
+        raise HTTPException(status_code=400, detail=f"No user: {email} in this system.")
+    
+    account = user.account 
+    user_data_encoded = jsonable_encoder(user)
+    account_data_encoded = jsonable_encoder(account)
+    
+    return schemas.UserAccount(user=user_data_encoded, account=account_data_encoded)
 
 # This will expect info for the User, and info for the users account. It will be sent in 
 # api/v1/
-@router.post("/", response_model=schemas.UserAccount)
-def create_user(
+@router.post("/registration", response_model=schemas.UserAccount)
+async def user_registration(
     *, 
     db: Session = Depends(deps.get_db),
     user_in: schemas.UserCreate,
@@ -93,7 +119,12 @@ def create_user(
     ## Need to add some security so some hacker cant just send a request to the endpoint and make a super_user.
     # I believ it should be set up through CORS to only work via the frontend. but still add logic if superuser=True.
     #
-
+    if not settings.USERS_OPEN_REGISTRATION:
+            raise HTTPException(
+                status_code=403,
+                detail="Open user registration is forbidden on this server",
+            )
+    
     user = crud.user.get_by_email(db, email=user_in.email)
     if user:
         raise HTTPException(
@@ -118,11 +149,13 @@ def create_user(
         # notify New user they need to verify their Email if enabled.
         if settings.EMAILS_ENABLED and user_in.email:
            verify_email_token = generate_verifyemail_token(user_in.email)
-           verify_email(
-               email_to= user_in.email, 
+
+           await verify_email(
+               email_to=user_in.email, 
                email_username=user_in.email, 
                token=verify_email_token
            )
+
         logzz.info(f"New User Created: {user_in.email}", timestamp=1)
         return schemas.UserAccount(user=user_data_encoded, account=account_data_encoded)
     
@@ -133,8 +166,7 @@ def create_user(
 
 
 
-# api/v1/users/me
-
+# api/v1/users/me update own user
 @router.put("/me", response_model=schemas.UserAccount)
 def update_user_me(
     *,
@@ -255,32 +287,33 @@ def update_user(
         user_after_update = crud.user.update(db, db_obj=user, obj_in=user_in) 
         user_data_encoded = jsonable_encoder(user_after_update)       
          
-        # Hack to fix the Update Bug... update the second twice.      
+        # Hack to fix the Update Bug... update the second addition to the DB twice. In this case I am 
+        # trying to update account after user. So I need to run update twice on account. 
+        # Im sure I don't know the exact reason this is needed, but this fixes it. I'll spend
+        # time on this in the future.      
         account_after_update = crud.account.update(db, db_obj=account, obj_in=account_in)  
         account_after_update = crud.account.update(db, db_obj=account, obj_in=account_in)   
-        account_data_encoded = jsonable_encoder(account_after_update)
 
+        account_data_encoded = jsonable_encoder(account_after_update)
         return schemas.UserAccount(user=user_data_encoded, account=account_data_encoded)
 
     except Exception as exc:
         logzz.error(str(exc))
 
 # api/v1/open
-# NOT DONE
-@router.post("/open", response_model=schemas.UserAccount)
-def create_user_open(
+# NOT DONE  Why do I even need this? the create_user endpoint doesnt require you to be logged in.
+# A new addition\user does not need to be logged in becasue they arent in the system
+@router.post("/create", response_model=schemas.UserAccount)
+def create_user(
     *,
     db: Session = Depends(deps.get_db),
-    password: str = Body(...),
-    email: EmailStr = Body(...),
-    full_name: str = Body(None),
-    phone_number: str = Body(None),
-    is_verified: bool = Body(None),
-    failed_attempts: int = Body(None),
-    account_locked: bool = Body(None),
+    user_in: schemas.UserCreate,
+    account_in: schemas.AccountCreate,
+    current_user: models.User = Depends(deps.get_current_active_superuser),
+    admin_token: str = Body(..., embed=True)
 ) -> Any:
     """
-    Create new user without the need to be logged in.
+    Create new user by admin
     """
     try:
         if not settings.USERS_OPEN_REGISTRATION:
@@ -288,28 +321,10 @@ def create_user_open(
                 status_code=403,
                 detail="Open user registration is forbidden on this server",
             )
-        
-        user = crud.user.get_by_email(db, email=email)
-        if user:
-            raise HTTPException(
-                status_code=400,
-                detail="The user with this username already exists in the system",
-            )
-        
-        user_in = schemas.UserCreate(
-            password=password,
-            email=email, 
-            full_name=full_name,
-            phone_number=phone_number,
-            is_verified=is_verified,
-            failed_attempts=failed_attempts,
-            account_locked=account_locked
-        )
-
-        # Finish this add account as well!!
-        user = crud.user.create(db, obj_in=user_in)
-
-        return schemas.UserAccount(user=user, account='')
+    # code to create a user. This is where admin would create a superUser. 
+    # Actually a su can becreated in either endpoint. all it takes is 
+    # is_superuser = True, that's it. Do I need 2 seperate ones? I guess yes becasue
+    # witht he other I can turn it on and off.    
     
     except Exception as err:
         logzz.error(f"An error occured in 'create_user_open()': \n{str(err)}")
@@ -364,5 +379,5 @@ def delete_user(
             )
     
     crud.user.remove(db, model_id=user_id)
-
+    logzz.info(f"Deleted user: {user.email}", timestamp=True)
     return {"msg": f"Deleted user: {user.email}"}

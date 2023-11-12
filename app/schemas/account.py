@@ -5,7 +5,7 @@ import re
 
 # Shared properties
 class AccountBase(BaseModel):
-    user_id: int   # Add this line
+    user_id: int   # This is set automatically. when the user is created, the user.id is user here to tie the account to the user.
     creation_date:  Union[datetime, str, None] = Field(None, example="01/23/2022")
     subscription_type: str = 'free' # free, basic, premium, maybe one other. Need to figure this out
     last_login_date:  Union[datetime, str, None] = Field(None, example="01/23/2022")   # Has not logged in yet, None is valid at creation

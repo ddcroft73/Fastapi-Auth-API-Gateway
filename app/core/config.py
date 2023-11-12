@@ -67,9 +67,9 @@ class Settings(BaseSettings):
     SERVER_HOST: str = f"http://localhost:8015"  
     EMAIL_API_HOST: str = f"http://{os.getenv('HOST_IP_ADDRESS')}:8014" #/192.168.12.130 This is dynamic, hence the code. 
     
-    EMAILS_ENABLED: bool = False  #Off to debug
+    EMAILS_ENABLED: bool = True  #Off to debug
     EMAIL_FROM: EmailStr = 'ddc.dev.python@gmail.com' # until I get a domain (decide on a name), and an email service with the same name
-    USERS_OPEN_REGISTRATION: bool = False
+    USERS_OPEN_REGISTRATION: bool = True
     # This data is added to the API_KEY in order to create the Admin Token. This ensures that the Admin token is totally
     # diffferent than a normal "user" token that is issued with succesful login. This effectively chnages to another API Key
     ADMIN_API_KEY: str = 'HDG673L2MNDUI76E'

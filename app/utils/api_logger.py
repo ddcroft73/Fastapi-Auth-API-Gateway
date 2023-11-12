@@ -3,7 +3,7 @@ from datetime import datetime, time, timedelta
 import re
 from os.path import join as os_join
 from .file_handler import filesys
-from app.core import settings
+
 
 """
 API Logger - 
@@ -215,9 +215,9 @@ class Archive():
 
 class APILogger():   
 
-    LOG_DIRECTORY: str = settings.LOG_DIRECTORY    
-    LOG_ARCHIVE_DIRECTORY: str = settings.LOG_ARCHIVE_DIRECTORY
-    DEFAULT_LOG_FILE: str = settings.DEFAULT_LOG_FILE
+    LOG_DIRECTORY: str = "./logs"   
+    LOG_ARCHIVE_DIRECTORY: str = "./logs/log-archives"
+    DEFAULT_LOG_FILE: str = "./logs/DEFAULT-app-logs.log"
 
     def __init__(
         self,
