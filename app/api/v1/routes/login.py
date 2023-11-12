@@ -92,7 +92,7 @@ async def login_access_token(
     # 
     # set the expire time and the user role to be encoded
     #
-    access_token_expires = timedelta(minutes=10)    
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)    
     if crud.user.is_superuser(user):
          user_role ='admin'
     else:
