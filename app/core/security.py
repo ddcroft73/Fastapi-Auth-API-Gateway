@@ -54,23 +54,16 @@ def get_password_hash(password: str) -> str:
 # Still working on this
 def verify_admin_token( token: str) -> bool:
     '''
-    payload = jwt.decode(
-            token, settings.API_KEY, algorithms=[settings.ALGORITHM]
-        )
-    token_data = schemas.TokenPayload(**payload)
-    
-
-    user = crud.user.get(db, model_id=token_data.sub)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found.")'''
-    
+    delete all this and just use verify_token?
+    '''
     return True
 
 
-def generate_singleuse_token(user_id: int, expire_minutes: int = 2) -> str:
+def generate_singleuse_token(user_id: int, expire_minutes: int = 5) -> str:
     '''
-    I need tokens all over that are simple and meant for verification and login
-    purposes, or just to connect to another API. 
+    I need tokens all over that are simple and meant for verification and 
+    to connect to another API.  It will always be tied to the user and have
+    an expiration date.
     '''
     expire = datetime.utcnow() + timedelta(minutes=expire_minutes)
     to_encode = {
@@ -95,21 +88,15 @@ def verify_2FA(users_code: str, real_code: str):
 
 def verify_token(token: str) -> bool:
     '''
-    another verify password function. I have 3.. lol one is embedded in get_curent_user
-    one is for email verification and password reset, adn this one for 2FA stuff. But they
-    really all do the same thing. 
-
-    should refactor it but it makes the actual coding easier, using dedicated verification 
-    oever this one returns true and not a toe
+       Used to verify admin, and tokens dealing with 2fa.
 
     '''
     try:
-        payload = jwt.decode(
+        jwt.decode(
             token, settings.API_KEY, algorithms=[settings.ALGORITHM]
         )  
-
     except (JWTError, ValidationError):
-        return False    
+        return False       
     
     return True
 

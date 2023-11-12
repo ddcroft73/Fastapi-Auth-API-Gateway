@@ -53,6 +53,11 @@ async def login_access_token(
     check out. The user will not have to login again until the token expires
     """
     def save_login_information() -> None:
+        '''
+          Nested helper to mark user as logged in. These attributes
+          come into play if I need to revoke a users tokens based on the date
+          they were created. 
+        '''
         current_time: str = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
         account = models.Account = crud.account.get_by_user_id(db, user_id=user.id)
 
@@ -64,8 +69,11 @@ async def login_access_token(
         db.commit()
      
     user: models.User = crud.user.authenticate(
-        db, email=form_data.username, password=form_data.password
+        db, 
+        email=form_data.username, 
+        password=form_data.password
     )        
+
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     elif not crud.user.is_active(user):
@@ -84,7 +92,7 @@ async def login_access_token(
     # 
     # set the expire time and the user role to be encoded
     #
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)    
+    access_token_expires = timedelta(minutes=10)    
     if crud.user.is_superuser(user):
          user_role ='admin'
     else:
@@ -107,6 +115,7 @@ def test_token(current_user: models.User = Depends(deps.get_current_user)) -> An
     Test access token
     """
     return current_user
+
 #
 #/api/v1/auth/login/password-recovery/{email}
 #
@@ -200,15 +209,16 @@ def verify_email(
 
 @router.put("/resend-verification/", response_model=schemas.Msg)
 async def resend_verification(email: EmailStr = Query(...)):
+
     # Create a new token and send out
     email_token = generate_verifyemail_token(email)
     await verify_email(
-        email_to='gen.disarray73@outlook.com',  # user_in.email, HARD CODED FOR testing
+        email_to= email, # 'gen.disarray73@outlook.com',  #HARD CODED FOR testing
         email_username=email,
         token=email_token
     )
     logzz.info(f'User: {email} was sent another verify email token.', timestamp=True)
-    return {"msg": "Resend email verification."}
+    return {"msg": f"Email verification Re-sent to: {email} "}
 
 #
 #  LOG_OUT USER by user_id
@@ -218,13 +228,14 @@ def logout_user(
     *,
     db: Session = Depends(deps.get_db),
     user_id: int,
-    current_superuser: models.User = Depends(deps.get_current_active_superuser),
+    superuser: models.User = Depends(deps.get_current_active_superuser),
     admin_token: str = Body(..., embed=True) 
 ) -> Any:
     '''
       Admin Action. Log out a given user.
     '''    
-    if not security.verify_admin_token(admin_token):
+    admin = security.verify_admin_token(admin_token)
+    if not admin:
         raise HTTPException(status_code=400, detail="Invalid Admin Token.")
     
     user = crud.user.get(db, model_id=user_id)
@@ -252,14 +263,14 @@ def verify_2FA_code(
     '''
       Verifies the code the user input for 2FA. 
     '''    
-    # check 2FA token for expiration... user gets 10 minutes to enter the fucking code... goddamnit! 
-    if not security.verify_token(timed_token):
+
+    token_expired = security.verify_token(timed_token)
+    if not token_expired:
         raise HTTPException(status_code=400, detail="Invalid Token.")
     
-    # verify the code
-    if not security.verify_2FA(code_2FA, code_user):
+    good_code = security.verify_2FA(code_2FA, code_user)
+    if not good_code:
         raise HTTPException(status_code=400, detail="Invalid Two Factor Auth code.")
-
 
     user = crud.user.get_by_email(db, email=email_account)
     if crud.user.is_superuser(user):
@@ -268,7 +279,6 @@ def verify_2FA_code(
         user_role = 'user'
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         
-    # in da house, send em a token.  You got 7 days mfr.
     return {
         "access_token": security.create_access_token(
             user.id, 

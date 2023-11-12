@@ -72,7 +72,7 @@ def read_users(
             user=user_data_encoded, 
             account=account_data_encoded)
         )
-        
+
     return user_data 
 
 
@@ -113,16 +113,14 @@ async def user_registration(
     account_in: schemas.AccountCreate,
 ) -> Any:
     """
-    Create new user. When a user registers, this endpoint creates the user.
+    New User Registration.
+
     """
-    #
-    ## Need to add some security so some hacker cant just send a request to the endpoint and make a super_user.
-    # I believ it should be set up through CORS to only work via the frontend. but still add logic if superuser=True.
-    #
+
     if not settings.USERS_OPEN_REGISTRATION:
             raise HTTPException(
                 status_code=403,
-                detail="Open user registration is forbidden on this server",
+                detail="Open user registration is forbidden for now.",
             )
     
     user = crud.user.get_by_email(db, email=user_in.email)
@@ -131,10 +129,9 @@ async def user_registration(
             status_code=400,
             detail="The user with this username already exists in the system.",
         )
+    
     try:        
-        # add user, and then the users account info as it was passed in
-        user: models.User = crud.user.create_no_commit(db, obj_in=user_in)
-        
+        user: models.User = crud.user.create_no_commit(db, obj_in=user_in)        
         account_in.user_id=user.id
         account: models.Account = crud.account.create_no_commit(db, obj_in=account_in)
                 
@@ -148,7 +145,7 @@ async def user_registration(
 
         # notify New user they need to verify their Email if enabled.
         if settings.EMAILS_ENABLED and user_in.email:
-           verify_email_token = generate_verifyemail_token(user_in.email)
+           verify_email_token: str = generate_verifyemail_token(user_in.email)
 
            await verify_email(
                email_to=user_in.email, 
@@ -165,8 +162,9 @@ async def user_registration(
         logzz.error(f"Endpoint -> api/v1 - create_user(): \n{str(err)} ")
 
 
-
+#
 # api/v1/users/me update own user
+# 
 @router.put("/me", response_model=schemas.UserAccount)
 def update_user_me(
     *,
@@ -187,8 +185,7 @@ def update_user_me(
     timezone: str = Body(None),
     use_2FA: bool = Body(None),
     contact_method_2FA: str = Body(None),
-    cell_provider_2FA: str = Body(None)
-,    
+    cell_provider_2FA: str = Body(None),    
     current_user: models.User = Depends(deps.get_current_active_user)
 ) -> Any:
     """
@@ -300,9 +297,7 @@ def update_user(
     except Exception as exc:
         logzz.error(str(exc))
 
-# api/v1/open
-# NOT DONE  Why do I even need this? the create_user endpoint doesnt require you to be logged in.
-# A new addition\user does not need to be logged in becasue they arent in the system
+# api/v1/create/
 @router.post("/create", response_model=schemas.UserAccount)
 def create_user(
     *,
@@ -321,10 +316,14 @@ def create_user(
                 status_code=403,
                 detail="Open user registration is forbidden on this server",
             )
+        
     # code to create a user. This is where admin would create a superUser. 
     # Actually a su can becreated in either endpoint. all it takes is 
     # is_superuser = True, that's it. Do I need 2 seperate ones? I guess yes becasue
-    # witht he other I can turn it on and off.    
+    # witht he other I can turn it on and off so that users cant openly reister.
+    # Only I can create them.
+    # 
+    # Could prove useful if someting goes wrong.   
     
     except Exception as err:
         logzz.error(f"An error occured in 'create_user_open()': \n{str(err)}")
