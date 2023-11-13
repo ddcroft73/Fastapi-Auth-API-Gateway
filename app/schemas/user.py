@@ -15,7 +15,6 @@ class UserBase(BaseModel):
     cell_provider: Optional[str] = None
     is_verified: Optional[bool] = False
     is_loggedin: Optional[bool] = False
-#    failed_login_attempts: Optional[int] = 0
 
 
 # Properties to receive via API on creation

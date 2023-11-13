@@ -24,8 +24,9 @@ This is a personal project and as it is, is a WIP.
 - Main API that handles "WHat the app does" Clock API
 
 
-### Latest Changes: 11/04/23
+## Latest Changes: 
 
+#### 11/04/23
 - Updated fasAPI to 0.104.0
 - I moved the .env file to auth-server.env  
 - Added env_file to the docker-compose file.
@@ -35,10 +36,10 @@ This is a personal project and as it is, is a WIP.
 - Found a fix for the `update bug`
 - Added Delete by ID
 - Added error checking for non existent records.
-- 
+#### 11/12/23
 - Added 2FA support
 - Added Async support to frequent used endpoints, and all io functions.
-
+- Revised some endpoint names
 
 ### TODO:
 

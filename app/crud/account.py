@@ -12,8 +12,6 @@ from app.models.account import Account
 from app.schemas import AccountCreate, AccountUpdate
 
 from app.core.security import get_password_hash, verify_password
-from app.utils.api_logger import logzz
-
 
 class CRUDAccount(CRUDBase[Account, AccountCreate, AccountUpdate]):
     
@@ -105,6 +103,4 @@ class CRUDAccount(CRUDBase[Account, AccountCreate, AccountUpdate]):
             return None
         return account
 
-
-    # What else do I need to access?
 account = CRUDAccount(Account)

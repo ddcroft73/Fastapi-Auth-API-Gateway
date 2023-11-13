@@ -30,9 +30,7 @@ from app.mail_utils import (
     verify_password_reset_token,
     verify_emailVerify_token,
     generate_verifyemail_token,
-    verify_email,
-    send_email,
-    send_sms
+    verify_email
 )
 from app.email_templates.email_2FA_code import build_template_2FA_code
 
@@ -126,14 +124,15 @@ async def recover_password(email: str, db: Session = Depends(deps.get_db)) -> An
     If the user is in the system,  Then they will be
     sent an email with instructions on how to change their password.
     """
-    user = crud.user.get_by_email(db, email=email)
+    user: models.User = crud.user.get_by_email(db, email=email)
 
     if not user:
         raise HTTPException(
             status_code=404,
             detail="The user with this username does not exist in the system.",
-        )    
+        )        
     password_reset_token = generate_password_reset_token(email=email)
+
     await send_reset_password_email(
         email_to=user.email, email=email, token=password_reset_token
     )
@@ -153,20 +152,21 @@ def reset_password(
     A user has changed their password, If the token they are using is valid and 
     they ae in the system, The password willl be changed. 
     """
-    email = verify_password_reset_token(token)
+    email: Optional[EmailStr] = verify_password_reset_token(token)
     if not email:
         raise HTTPException(status_code=400, detail="Invalid token")
     
-    user = crud.user.get_by_email(db, email=email)
+    user: models.User = crud.user.get_by_email(db, email=email)
     if not user:
         raise HTTPException(
             status_code=404,
             detail="The user with this username does not exist in the system.",
         )
+    
     elif not crud.user.is_active(user):
         raise HTTPException(status_code=400, detail="Inactive user")
     
-    hashed_password = get_password_hash(new_password)
+    hashed_password: str = get_password_hash(new_password)
     user.hashed_password = hashed_password
 
     db.add(user)
@@ -185,11 +185,11 @@ def verify_email(
     '''
       If all checks out, change is_verified to True.
     '''
-    email =  verify_emailVerify_token(token)
+    email: Optional[str] =  verify_emailVerify_token(token)
     if not email:
         raise HTTPException(status_code=400, detail="Invalid token")
     
-    user = crud.user.get_by_email(db, email=email)
+    user: models.User = crud.user.get_by_email(db, email=email)
     if not user:
         raise HTTPException(
             status_code=404,
@@ -234,11 +234,16 @@ def logout_user(
     '''
       Admin Action. Log out a given user.
     '''    
-    admin = security.verify_admin_token(admin_token)
+    admin: bool= security.verify_admin_token(admin_token)
     if not admin:
         raise HTTPException(status_code=400, detail="Invalid Admin Token.")
     
-    user = crud.user.get(db, model_id=user_id)
+    # Make sure user exists!!
+
+    user: models.User = crud.user.get(db, model_id=user_id)
+    if not user:
+        raise HTTPException(status_code=400, detail=f"No user by that ID: [{user_id}] exists.")
+
     user.is_loggedin = False
 
     db.add(user) 
@@ -257,22 +262,22 @@ def verify_2FA_code(
     code_2FA: str = Body(...),
     code_user: str = Body(...), 
     email_account: str = Body(...),
-    timed_token: str = Body(...),
-    
+    timed_token: str = Body(...),    
 ) -> Any:
     '''
       Verifies the code the user input for 2FA. 
     '''    
-
-    token_expired = security.verify_token(timed_token)
+    user_role: str 
+    
+    token_expired: bool = security.verify_token(timed_token)
     if not token_expired:
         raise HTTPException(status_code=400, detail="Invalid Token.")
     
-    good_code = security.verify_2FA(code_2FA, code_user)
+    good_code: bool = security.verify_2FA(code_2FA, code_user)
     if not good_code:
         raise HTTPException(status_code=400, detail="Invalid Two Factor Auth code.")
 
-    user = crud.user.get_by_email(db, email=email_account)
+    user: models.User = crud.user.get_by_email(db, email=email_account)
     if crud.user.is_superuser(user):
         user_role ='admin'
     else:

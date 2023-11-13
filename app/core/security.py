@@ -54,16 +54,16 @@ def get_password_hash(password: str) -> str:
 # Still working on this
 def verify_admin_token( token: str) -> bool:
     '''
-    delete all this and just use verify_token?
+        delete all this and just use verify_token?
     '''
     return True
 
 
 def generate_singleuse_token(user_id: int, expire_minutes: int = 5) -> str:
     '''
-    I need tokens all over that are simple and meant for verification and 
-    to connect to another API.  It will always be tied to the user and have
-    an expiration date.
+        I need tokens all over that are simple and meant for verification and 
+        to connect to another API.  It will always be tied to the user and have
+        an expiration date.
     '''
     expire = datetime.utcnow() + timedelta(minutes=expire_minutes)
     to_encode = {
@@ -77,8 +77,7 @@ def generate_singleuse_token(user_id: int, expire_minutes: int = 5) -> str:
 def verify_2FA(users_code: str, real_code: str):
     '''
       Compares the token from the User and the token that was created to see if match
-      The users code should be formatted with a - at the 4th place, and upper case
-      
+      The users code should be formatted with a - at the 4th place, and upper case.      
     '''    
     users_code = f'{users_code[0:3].upper()}-{users_code[3:].upper()}'
     if users_code != real_code:
@@ -89,7 +88,6 @@ def verify_2FA(users_code: str, real_code: str):
 def verify_token(token: str) -> bool:
     '''
        Used to verify admin, and tokens dealing with 2fa.
-
     '''
     try:
         jwt.decode(
@@ -126,15 +124,15 @@ async def send_2FA_code(
     token_2FA: str = generate_singleuse_token(
         user_id, 
         settings.TWO_FACTOR_AUTH_EXPIRE_MINUTES
-    )
-    
-    
+    )    
+    # TEXT
     if contact_method_2FA == "sms":
         message: str = (f"Your {settings.PROJECT_NAME} verification code is: {code_2FA} "
                         f"\nThis code will expire in {settings.TWO_FACTOR_AUTH_EXPIRE_MINUTES} minutes. "
                         "Do not share this code with anyone.")
-        send_sms(message, user_phone_number, token_2FA)
-
+        await send_sms(message, user_phone_number, token_2FA)
+    
+    # EMAIL
     elif contact_method_2FA == "email":
         email_obj = schemas.Email(
             email_to=user_email, 

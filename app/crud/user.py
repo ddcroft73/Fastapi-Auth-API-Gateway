@@ -25,7 +25,6 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             is_superuser=obj_in.is_superuser,
             phone_number=obj_in.phone_number,
             is_verified=obj_in.is_verified, 
-    #        failed_login_attempts=obj_in.failed_login_attempts, 
             user_uuid=obj_in.user_uuid,
             cell_provider=obj_in.cell_provider,
             is_loggedin=obj_in.is_loggedin
@@ -46,7 +45,6 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             is_superuser=obj_in.is_superuser,
             phone_number=obj_in.phone_number,
             is_verified=obj_in.is_verified,
-    #        failed_login_attempts=obj_in.failed_login_attempts,
             user_uuid=obj_in.user_uuid,
             cell_provider=obj_in.cell_provider,
             is_loggedin=obj_in.is_loggedin

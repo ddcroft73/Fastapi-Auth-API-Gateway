@@ -26,3 +26,5 @@ work on create user admin
 work on resend email verify
 
 work on admin token logic
+
+adjust the account table. remove the fields that are redundant
