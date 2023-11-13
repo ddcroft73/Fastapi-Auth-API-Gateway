@@ -32,24 +32,23 @@ This is a personal project and as it is, is a WIP.
 - Added fields to the database for 2FA. still need to code it.
 - Added some new fields to the user and account tables to implement 2FA
 - Removed failed_login_attempts.
-- Found a fix fot the `update bug`
+- Found a fix for the `update bug`
 - Added Delete by ID
 - Added error checking for non existent records.
+- 
+- Added 2FA support
+- Added Async support to frequent used endpoints, and all io functions.
 
 
 ### TODO:
 
-- Need to finish endpoints (clean up code on others) 
-- Add the logic for Admin PIN Access (verify_admin_token)
+- Add the logic for Admin PIN Access (verify_admin_token), almost done
 - Figure out a production logging setup.
-- Find a better way to fix the `update bug`. It works but I'm not proud of the fix.
 - Finish resend-verification.
 - Finish password recovery
-- Implement 2FA. This has been started. Added dataase fields and some code framework.
-- Finish Create User Open. Im not so sure I even need this?
+- Finish Create User Admin
 - Implement Redis caching
 - Rate limiting, 
 - Add logic for revoking Tokens. This will be based on the user logging out,
-- Add endpoint so I can logout individual users.
-- Add Logout own user
+- Make Email templates
   

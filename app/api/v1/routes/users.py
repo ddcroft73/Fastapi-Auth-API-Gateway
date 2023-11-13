@@ -90,7 +90,8 @@ def user_by_email(
 
     d3d
     '''
-    if not security.verify_admin_token(admin_token):
+    admin = security.verify_admin_token(admin_token)
+    if not admin:
         raise HTTPException(status_code=400, detail="Invalid Token")
     
     user = crud.user.get_by_email(db,email=email)
@@ -365,8 +366,8 @@ def delete_user(
     '''
     Delete a user from the system. Super user action.
     '''
-    
-    if not security.verify_admin_token(admin_token):
+    admin = security.verify_admin_token(admin_token)
+    if not admin:
         raise HTTPException(status_code=403, detail="Admin token invalid")    
     
     user = crud.user.get(db, model_id=user_id)
