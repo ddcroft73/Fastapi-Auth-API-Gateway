@@ -32,9 +32,12 @@ def upgrade() -> None:
         sa.Column("is_superuser", sa.Boolean(), nullable=True, default=False),
         sa.Column("phone_number", sa.String(), unique=False, nullable=True),
         sa.Column("is_verified", sa.Boolean(), default=False),
-        
-        # New
         sa.Column("cell_provider", sa.String(), unique=False, nullable=True),
+
+        # New additions:
+        # is_deleted   - important incase you need to revive the account, etc.
+        # deleted_date - The date of the deletion, for record keeping. WIll also record this in the logs
+        # user_notes  May come in handy to keep tabs on certain users.
     )
     op.create_index(op.f("ix_user_email"), "user", ["email"], unique=True)
     op.create_index(op.f("ix_user_full_name"), "user", ["full_name"], unique=False)
@@ -49,6 +52,8 @@ def upgrade() -> None:
 
         sa.Column("hashed_admin_PIN", sa.String(), nullable=True),
         sa.Column("creation_date", sa.DateTime(timezone=True), server_default=func.now(), nullable=False),
+        # change "subscription_type" to app_tier
+
         sa.Column("subscription_type", sa.String(), default='free', nullable=True),
         sa.Column("last_login_date", sa.DateTime(timezone=True), nullable=True),
         sa.Column("bill_renew_date", sa.DateTime( timezone=True), nullable=True),

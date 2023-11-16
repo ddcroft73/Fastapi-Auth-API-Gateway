@@ -30,10 +30,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return db.query(self.model).offset(skip).limit(limit).all()
 
     def create(self, db: Session, *, obj_in: CreateSchemaType) -> ModelType:
-        try:
-             obj_in_data = jsonable_encoder(obj_in)
-        except Exception as er:
-            logzz.info(f'ERROR in jsonable_encoder()  {str(er)}')
+        obj_in_data = jsonable_encoder(obj_in)
 
         db_obj = self.model(**obj_in_data)
         db.add(db_obj)
@@ -56,7 +53,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.commit()
         db.refresh(db_obj)
         return db_obj
-
+    
     def remove(self, db: Session, *, model_id: int) -> ModelType:
         obj = db.query(self.model).get(model_id)
         db.delete(obj)

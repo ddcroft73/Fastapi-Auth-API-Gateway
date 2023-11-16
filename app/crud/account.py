@@ -15,8 +15,6 @@ from app.core.security import get_password_hash, verify_password
 
 class CRUDAccount(CRUDBase[Account, AccountCreate, AccountUpdate]):
     
-    #def get_by_id(self, db: Session, *, user_id: int) -> Optional[Account]:
-   #     return db.query(Account).filter(Account.id == user_id).first()
     def get_by_user_id(self, db: Session, *, user_id: int) -> Optional[Account]:
         return db.query(Account).filter(Account.user_id == user_id).first()
 

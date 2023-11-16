@@ -43,6 +43,13 @@ def create_access_token(
     encoded_jwt = jwt.encode(to_encode, settings.API_KEY, algorithm=settings.ALGORITHM)    
     return encoded_jwt
 
+def create_admin_token() -> str:
+    '''
+        The token an admin must use to perform any actions on other users, or on the 
+        system in general. This token will be good for no more than 1 hour. 
+    '''
+    return
+
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
@@ -59,7 +66,7 @@ def verify_admin_token( token: str) -> bool:
     return True
 
 
-def generate_singleuse_token(user_id: int, expire_minutes: int = 5) -> str:
+def generate_singleuse_token(user_id: int, email: str, expire_minutes: int = 5) -> str:
     '''
         I need tokens all over that are simple and meant for verification and 
         to connect to another API.  It will always be tied to the user and have
@@ -68,7 +75,8 @@ def generate_singleuse_token(user_id: int, expire_minutes: int = 5) -> str:
     expire = datetime.utcnow() + timedelta(minutes=expire_minutes)
     to_encode = {
         "exp": expire, 
-        "sub": user_id
+        "sub": str(user_id),
+        "email": email
     }
     encoded_jwt = jwt.encode(to_encode, settings.API_KEY, algorithm=settings.ALGORITHM)    
     return encoded_jwt
@@ -79,7 +87,6 @@ def verify_2FA(users_code: str, real_code: str):
       Compares the token from the User and the token that was created to see if match
       The users code should be formatted with a - at the 4th place, and upper case.      
     '''    
-    users_code = f'{users_code[0:3].upper()}-{users_code[3:].upper()}'
     if users_code != real_code:
         return False
     return True
@@ -90,14 +97,21 @@ def verify_token(token: str) -> bool:
        Used to verify admin, and tokens dealing with 2fa.
     '''
     try:
-        jwt.decode(
+        payload = jwt.decode(
             token, settings.API_KEY, algorithms=[settings.ALGORITHM]
         )  
+        
     except (JWTError, ValidationError):
         return False       
     
     return True
 
+def email_from_token(token: str) -> str:
+
+    token_ = jwt.decode(
+        token, settings.API_KEY, algorithms=[settings.ALGORITHM]
+    )
+    return token_["email"]
 
 async def send_2FA_code(
     user_id: int ,        
@@ -123,6 +137,7 @@ async def send_2FA_code(
     code_2FA: str = generate_2FA_code()
     token_2FA: str = generate_singleuse_token(
         user_id, 
+        user_email,
         settings.TWO_FACTOR_AUTH_EXPIRE_MINUTES
     )    
     # TEXT
@@ -138,7 +153,7 @@ async def send_2FA_code(
             email_to=user_email, 
             email_from=settings.EMAIL_FROM,
             subject="Two Factor Authentication Code from Life Package",
-            message=code_2FA, #build_template_2FA_code(code_2FA=code_2FA, email=user_email),
+            message=build_template_2FA_code(code_2FA=code_2FA, email=user_email),
             user_id=user_email
         )
         await send_email(email_obj, token_2FA)       

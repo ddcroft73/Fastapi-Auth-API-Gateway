@@ -4,3 +4,5 @@ logs
 alembic/versions/__pycache__
 test.html
 revision_backups
+test.py
+LPack-GPT-info.txt

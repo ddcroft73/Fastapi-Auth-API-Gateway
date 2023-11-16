@@ -19,6 +19,4 @@ class User(Base):
     is_verified = Column(Boolean(), default=False)
     is_loggedin = Column(Boolean(), default=False)
     
-#    failed_login_attempts = Column(Integer, default=0)
-
     account = relationship("Account", uselist=False, back_populates="user")

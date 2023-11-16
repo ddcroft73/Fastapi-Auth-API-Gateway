@@ -28,3 +28,21 @@ work on resend email verify
 work on admin token logic
 
 adjust the account table. remove the fields that are redundant
+
+11/15/2023
+Create some Admin endpoints to poke around on the system. They can update, delete, logout any user. should make an admin 
+mesaging system to send messgaes to users. Or implement an Admin to user websocket chat. but this feature is hidden. Only I can 
+initiate the chat, but the user and administartor can chat back and forth. WOuld be cool is someone broke in. I could message the fucker.
+
+I should be able to block or lockout a user.
+
+FINISH:
+ Create User Admin endpoint
+ 
+DATaBASE revision:
+  - user:
+     + ADD is_deleted 
+     + ADD user_notes
+  - account:
+     - REMOVE cell_provider_2FA
+     - RENAME subscription_type, app_tier

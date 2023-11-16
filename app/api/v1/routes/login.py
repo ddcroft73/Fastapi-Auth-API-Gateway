@@ -1,5 +1,5 @@
 from datetime import timedelta, datetime
-from typing import Any, Union, Optional
+from typing import Any, Union, Optional, Annotated
 import string
 from random import randint , choice
 
@@ -42,7 +42,7 @@ router = APIRouter()
 @router.post("/login/access-token", response_model=Union[schemas.Token, schemas.TwoFactorAuth])
 async def login_access_token(
     request: Request,
-    db: Session = Depends(deps.get_db), 
+    db: Annotated[Session, Depends(deps.get_db)], 
     form_data: OAuth2PasswordRequestForm = Depends()
 ) -> Any:
     """
@@ -57,7 +57,7 @@ async def login_access_token(
           they were created. 
         '''
         current_time: str = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
-        account = models.Account = crud.account.get_by_user_id(db, user_id=user.id)
+        account = models.Account = user.account #crud.account.get_by_user_id(db, user_id=user.id)
 
         account.last_login_date = current_time
         user.is_loggedin = True
@@ -107,18 +107,28 @@ async def login_access_token(
 #
 #/api/v1/auth/login/test-token
 #
-@router.post("/login/test-token", response_model=schemas.User)
-def test_token(current_user: models.User = Depends(deps.get_current_user)) -> Any:
+@router.post("/login/test-token", response_model=schemas.UserAccount)
+def test_token(
+    current_user: Annotated[models.User, Depends(deps.get_current_user)]
+) -> Any:
     """
     Test access token
+
+    Send a token to this endpoint and it will return the info of the user
+    it belongs to.
     """
-    return current_user
+    return schemas.UserAccount(
+        user=jsonable_encoder(current_user), 
+        account=jsonable_encoder(current_user.account)
+    ) 
 
 #
 #/api/v1/auth/login/password-recovery/{email}
 #
 @router.post("/password-recovery/{email}", response_model=schemas.Msg)
-async def recover_password(email: str, db: Session = Depends(deps.get_db)) -> Any:
+async def recover_password(
+    email: str, 
+    db: Annotated[Session, Depends(deps.get_db)]) -> Any:
     """
     Password Recovery:
     If the user is in the system,  Then they will be
@@ -185,7 +195,7 @@ def verify_email(
     '''
       If all checks out, change is_verified to True.
     '''
-    email: Optional[str] =  verify_emailVerify_token(token)
+    email: Optional[str] = verify_emailVerify_token(token)
     if not email:
         raise HTTPException(status_code=400, detail="Invalid token")
     
@@ -198,8 +208,8 @@ def verify_email(
     elif not crud.user.is_active(user):
         raise HTTPException(status_code=400, detail="Inactive user")
     
-    user.is_verified = True
-    
+
+    user.is_verified = True    
     db.add(user)
     db.commit()    
 
@@ -209,11 +219,9 @@ def verify_email(
 
 @router.put("/resend-verification/", response_model=schemas.Msg)
 async def resend_verification(email: EmailStr = Query(...)):
-
-    # Create a new token and send out
     email_token = generate_verifyemail_token(email)
     await verify_email(
-        email_to= email, # 'gen.disarray73@outlook.com',  #HARD CODED FOR testing
+        email_to=email, 
         email_username=email,
         token=email_token
     )
@@ -234,18 +242,16 @@ def logout_user(
     '''
       Admin Action. Log out a given user.
     '''    
-    admin: bool= security.verify_admin_token(admin_token)
+    admin: bool = security.verify_admin_token(admin_token)
     if not admin:
         raise HTTPException(status_code=400, detail="Invalid Admin Token.")
     
-    # Make sure user exists!!
-
     user: models.User = crud.user.get(db, model_id=user_id)
     if not user:
         raise HTTPException(status_code=400, detail=f"No user by that ID: [{user_id}] exists.")
 
-    user.is_loggedin = False
 
+    user.is_loggedin = False
     db.add(user) 
     db.commit()
     
@@ -271,11 +277,16 @@ def verify_2FA_code(
     
     token_expired: bool = security.verify_token(timed_token)
     if not token_expired:
-        raise HTTPException(status_code=400, detail="Invalid Token.")
+        raise HTTPException(status_code=400, detail="Token Expired.")
     
+    token_user: EmailStr = security.email_from_token(timed_token)
+    if not token_user == email_account:
+        raise HTTPException(status_code=400, detail="Users don't match.")
+
     good_code: bool = security.verify_2FA(code_2FA, code_user)
     if not good_code:
         raise HTTPException(status_code=400, detail="Invalid Two Factor Auth code.")
+
 
     user: models.User = crud.user.get_by_email(db, email=email_account)
     if crud.user.is_superuser(user):

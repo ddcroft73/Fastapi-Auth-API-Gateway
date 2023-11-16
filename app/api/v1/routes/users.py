@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Union, Annotated
 from datetime import datetime
 from time import sleep
 
@@ -36,14 +36,14 @@ def read_user_me(
     current_user: models.User = Depends(deps.get_current_active_user),
 ) -> Any:
     """
-    Get current user.
+    Get current user. 
+    WHen a users dashboard is displayed this endpoint is where the info comes from.
     """
-    account: models.Account = crud.account.get_by_user_id(db, user_id=current_user.id)
-
-    user_data_encoded = jsonable_encoder(current_user)
-    account_data_encoded = jsonable_encoder(account)    
-    
-    return schemas.UserAccount(user=user_data_encoded, account=account_data_encoded)
+    account: models.Account = current_user.account     
+    return schemas.UserAccount(
+        user=jsonable_encoder(current_user), 
+        account=jsonable_encoder(account)
+    )
 
 # api/v1/users/
 @router.get("/", response_model=List[schemas.UserAccount])
@@ -65,12 +65,12 @@ def read_users(
 
     for user in users:        
         account: models.Account = user.account
-        user_data_encoded = jsonable_encoder(user)
-        account_data_encoded = jsonable_encoder(account)
+        user_data_JSON = jsonable_encoder(user)
+        account_data_JSON = jsonable_encoder(account)
 
         user_data.append(schemas.UserAccount(
-            user=user_data_encoded, 
-            account=account_data_encoded)
+            user=user_data_JSON, 
+            account=account_data_JSON)
         )
 
     return user_data 
@@ -81,27 +81,30 @@ def read_users(
 def user_by_email( 
     *,
     db: Session = Depends(deps.get_db),
-    current_superuser: models.User = Depends(deps.get_current_active_superuser),
+    current_superuser: Annotated[models.User, Depends(deps.get_current_active_superuser)],
     email: EmailStr,   
     admin_token: str = Body(..., embed=True) 
 ) -> Any:
     '''
-       Get a user by their email.
+       Get a users information by their email.
     '''
-    admin = security.verify_admin_token(admin_token)
+    admin: bool = security.verify_admin_token(admin_token)
     if not admin:
         raise HTTPException(status_code=400, detail="Invalid Token")   
      
     user: models.User = crud.user.get_by_email(db,email=email)
     if not user:
-        raise HTTPException(status_code=400, detail=f"No user: {email} in this system.")
+        raise HTTPException(
+            status_code=400, 
+            detail=f"No user: {email} in this system."
+        )
+        
+    account: models.Account = user.account 
     
-    account = models.Account = crud.account.get_by_user_id(db, user_id=user.id) #user.account 
-
-    user_data_json = jsonable_encoder(user)
-    account_data_json = jsonable_encoder(account)
-    
-    return schemas.UserAccount(user=user_data_json, account=account_data_json)
+    return schemas.UserAccount(
+        user=jsonable_encoder(user), 
+        account=jsonable_encoder(account)
+    )
 
 # This will expect info for the User, and info for the users account. It will be sent in 
 # api/v1/
@@ -141,8 +144,8 @@ async def user_registration(
         db.refresh(account)
         
         # Prepare the response
-        user_data_json = jsonable_encoder(user)
-        account_data_json = jsonable_encoder(account)
+        user_data_JSON = jsonable_encoder(user)
+        account_data_JSON = jsonable_encoder(account)
 
         # notify New user they need to verify their Email if enabled.
         if settings.EMAILS_ENABLED and user_in.email:
@@ -155,7 +158,11 @@ async def user_registration(
            )
 
         logzz.info(f"New User Created: {user_in.email}", timestamp=1)
-        return schemas.UserAccount(user=user_data_json, account=account_data_json)
+
+        return schemas.UserAccount(
+            user=user_data_JSON, 
+            account=account_data_JSON
+        )
     
     except Exception as err:
         # incase of error make sure no data is saved. Dont want a user without an account and vice versa
@@ -208,10 +215,10 @@ def update_user_me(
             user_in.phone_number = phone_number
 
         user: models.User = crud.user.update(db, db_obj=current_user, obj_in=user_in)
-        user_data_json = jsonable_encoder(user)
+        user_data_JSON = jsonable_encoder(user)
 
         # Handle Account Instance.
-        current_users_account: models.Account = crud.account.get_by_user_id(db, user_id=user.id) #current_user.account
+        current_users_account: models.Account = current_user.account
         user_account_data = jsonable_encoder(current_users_account)
         account_in = schemas.AccountUpdate(**user_account_data)
 
@@ -242,9 +249,12 @@ def update_user_me(
 
         account = crud.account.update(db, db_obj=current_users_account, obj_in=account_in)   
         account = crud.account.update(db, db_obj=current_users_account, obj_in=account_in)        
-        account_data_json = jsonable_encoder(account)
+        account_data_JSON = jsonable_encoder(account)
         
-        return schemas.UserAccount(user=user_data_json, account=account_data_json)
+        return schemas.UserAccount(
+            user=user_data_JSON, 
+            account=account_data_JSON
+        )
     
     except Exception as err:
         logzz.error(f"EndPoint -> api/v1/users/me 'update_user_me()': \n{str(err)}")
@@ -274,7 +284,7 @@ def update_user(
             raise HTTPException(status_code=403, detail="Admin token invalid")    
         
         user: models.user = crud.user.get(db, model_id=user_id)
-        account: models.Account = crud.account.get_by_user_id(db, user_id=user.id)#user.account
+        account: models.Account = user.account
         
         if user == None or account == None:
             return {"msg": "That user account does not exist."}
@@ -286,7 +296,7 @@ def update_user(
             )
         
         user_after_update = crud.user.update(db, db_obj=user, obj_in=user_in) 
-        user_data_json = jsonable_encoder(user_after_update)       
+        user_data_JSON = jsonable_encoder(user_after_update)       
          
         # Hack to fix the Update Bug... update the second addition to the DB twice. In this case I am 
         # trying to update account after user. So I need to run update twice on account. 
@@ -295,8 +305,12 @@ def update_user(
         account_after_update = crud.account.update(db, db_obj=account, obj_in=account_in)  
         account_after_update = crud.account.update(db, db_obj=account, obj_in=account_in)   
 
-        account_data_json = jsonable_encoder(account_after_update)
-        return schemas.UserAccount(user=user_data_json, account=account_data_json)
+        account_data_JSON = jsonable_encoder(account_after_update)
+
+        return schemas.UserAccount(
+            user=user_data_JSON, 
+            account=account_data_JSON
+        )
 
     except Exception as exc:
         logzz.error(str(exc))
@@ -342,21 +356,21 @@ def read_user_by_id(
 ) -> Any:
     """
     Get a specific user by id.
-    We need to return The User and acount info
+    We need to return The User and account info
     """
     user: models.User = crud.user.get(db, model_id=user_id)
-    account: models.Account = crud.account.get_by_user_id(db, user_id=user_id)
+    account: models.Account = user.account if user is not None else None 
     
-    user_data_json = jsonable_encoder(user)
-    account_data_json = jsonable_encoder(account)
-
     if user == None or account == None:
         if user == None and account == None:
             return {"msg": "That record does not exist"}
         else:
             return {"msg": "Either User or Account are corrupt."}
 
-    return schemas.UserAccount(user=user_data_json, account=account_data_json)        
+    return schemas.UserAccount(
+        user=jsonable_encoder(user), 
+        account=jsonable_encoder(account)
+    )        
     
  
 
@@ -383,5 +397,6 @@ def delete_user(
             )
     
     crud.user.remove(db, model_id=user_id)
+
     logzz.info(f"Deleted user: {user.email}", timestamp=True)
     return {"msg": f"Deleted user: {user.email}"}
