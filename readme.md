@@ -46,10 +46,8 @@ This is a personal project and as it is, is a WIP.
 - Add the logic for Admin PIN Access (verify_admin_token), almost done
 - Figure out a production logging setup.
 - Finish resend-verification.
-- Finish password recovery
 - Finish Create User Admin
-- Implement Redis caching
 - Rate limiting, 
 - Add logic for revoking Tokens. This will be based on the user logging out,
-- Make Email templates
+- 
   
