@@ -23,7 +23,10 @@ async def send_email(email: schemas.Email, token: str) -> None:
         'Content-Type': 'application/json'
     }
 
-    logzz.info(f'url: {url} Header: {headers}, Email: {email.dict()}', timestamp=True)
+    logzz.info(
+        f'Sending Request to Notification service. Email Sent to: {email.email_to}', 
+        timestamp=True
+    )
     
     response = requests.request(
             "POST", 
@@ -90,7 +93,9 @@ def generate_password_reset_token(email: EmailStr) -> str:
          "exp": exp, 
          "nbf": now, 
          "email": email 
-        }, settings.API_KEY, settings.ALGORITHM,
+        }, 
+        settings.API_KEY, 
+        settings.ALGORITHM,
     )
     return encoded_jwt
 

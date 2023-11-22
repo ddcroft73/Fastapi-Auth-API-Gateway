@@ -62,6 +62,7 @@ def get_password_hash(password: str) -> str:
 def verify_admin_token( token: str) -> bool:
     '''
         delete all this and just use verify_token?
+        Right now Im just sending them through for debugging
     '''
     return True
 
@@ -85,8 +86,10 @@ def generate_singleuse_token(user_id: int, email: str, expire_minutes: int = 5) 
 def verify_2FA(users_code: str, real_code: str):
     '''
       Compares the token from the User and the token that was created to see if match
-      The users code should be formatted with a - at the 4th place, and upper case.      
+      The users code should be formatted with a - at the 4th place, and upper case.    
+      it will be sent to the server witout the hyphen  
     '''    
+    users_code = f'{users_code[0:3].upper()}-{users_code[3:].upper()}'
     if users_code != real_code:
         return False
     return True
@@ -97,7 +100,7 @@ def verify_token(token: str) -> bool:
        Used to verify admin, and tokens dealing with 2fa.
     '''
     try:
-        payload = jwt.decode(
+        jwt.decode(
             token, settings.API_KEY, algorithms=[settings.ALGORITHM]
         )  
         
@@ -143,7 +146,7 @@ async def send_2FA_code(
     # TEXT
     if contact_method_2FA == "sms":
         message: str = (f"Your {settings.PROJECT_NAME} verification code is: {code_2FA} "
-                        f"\nThis code will expire in {settings.TWO_FACTOR_AUTH_EXPIRE_MINUTES} minutes. "
+                        f"\n\nThis code will expire in {settings.TWO_FACTOR_AUTH_EXPIRE_MINUTES} minutes. "
                         "Do not share this code with anyone.")
         await send_sms(message, user_phone_number, token_2FA)
     
@@ -156,6 +159,6 @@ async def send_2FA_code(
             message=build_template_2FA_code(code_2FA=code_2FA, email=user_email),
             user_id=user_email
         )
-        await send_email(email_obj, token_2FA)       
+#        await send_email(email_obj, token_2FA)       So I don't get a million emails when debugging
     
     return schemas.TwoFactorAuth(code=code_2FA, token=token_2FA) 

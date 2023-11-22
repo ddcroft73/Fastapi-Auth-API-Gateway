@@ -37,7 +37,7 @@ def upgrade() -> None:
         # New additions:
         # is_deleted   - important incase you need to revive the account, etc.
         # deleted_date - The date of the deletion, for record keeping. WIll also record this in the logs
-        # user_notes  May come in handy to keep tabs on certain users.
+        # user_notes   - May come in handy to keep tabs on certain users.
     )
     op.create_index(op.f("ix_user_email"), "user", ["email"], unique=True)
     op.create_index(op.f("ix_user_full_name"), "user", ["full_name"], unique=False)

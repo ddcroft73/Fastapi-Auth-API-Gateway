@@ -23,7 +23,7 @@ from app.api import deps
 from app.core import security
 from app.core.config import settings
 from app.utils.api_logger import logzz
-from app.core.security import get_password_hash, generate_singleuse_token
+from app.core.security import get_password_hash
 from app.mail_utils import (
     generate_password_reset_token,
     send_reset_password_email,
@@ -32,7 +32,7 @@ from app.mail_utils import (
     generate_verifyemail_token,
     verify_email
 )
-from app.email_templates.email_2FA_code import build_template_2FA_code
+#from app.email_templates.email_2FA_code import build_template_2FA_code
 
 router = APIRouter()
 
@@ -73,9 +73,9 @@ async def login_access_token(
     )        
 
     if not user:
-        raise HTTPException(status_code=400, detail="Incorrect email or password")
+        raise HTTPException(status_code=401, detail="wrong credentials")
     elif not crud.user.is_active(user):
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise HTTPException(status_code=401, detail="inactive user")
     
     save_login_information()    
 
@@ -101,7 +101,7 @@ async def login_access_token(
         user_role, 
         expires_delta=access_token_expires
     )
-    return schemas.Token(access_token=token, token_type="bearer")
+    return schemas.Token(access_token=token, token_type="bearer", user_role=user_role)
         
 
 #
@@ -139,7 +139,7 @@ async def recover_password(
     if not user:
         raise HTTPException(
             status_code=404,
-            detail="The user with this username does not exist in the system.",
+            detail="user does not exist",
         )        
     password_reset_token = generate_password_reset_token(email=email)
 
@@ -164,17 +164,17 @@ def reset_password(
     """
     email: Optional[EmailStr] = verify_password_reset_token(token)
     if not email:
-        raise HTTPException(status_code=400, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="invalid token")
     
     user: models.User = crud.user.get_by_email(db, email=email)
     if not user:
         raise HTTPException(
             status_code=404,
-            detail="The user with this username does not exist in the system.",
+            detail="user does not exist",
         )
     
     elif not crud.user.is_active(user):
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise HTTPException(status_code=401, detail="inactive user")
     
     hashed_password: str = get_password_hash(new_password)
     user.hashed_password = hashed_password
@@ -197,16 +197,16 @@ def verify_email(
     '''
     email: Optional[str] = verify_emailVerify_token(token)
     if not email:
-        raise HTTPException(status_code=400, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="invalid token")
     
     user: models.User = crud.user.get_by_email(db, email=email)
     if not user:
         raise HTTPException(
             status_code=404,
-            detail="The user with this username does not exist in the system.",
+            detail="user does not exist",
         )
     elif not crud.user.is_active(user):
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise HTTPException(status_code=401, detail="inactive user")
     
 
     user.is_verified = True    
@@ -244,11 +244,11 @@ def logout_user(
     '''    
     admin: bool = security.verify_admin_token(admin_token)
     if not admin:
-        raise HTTPException(status_code=400, detail="Invalid Admin Token.")
+        raise HTTPException(status_code=401, detail="invalid admin token")
     
     user: models.User = crud.user.get(db, model_id=user_id)
     if not user:
-        raise HTTPException(status_code=400, detail=f"No user by that ID: [{user_id}] exists.")
+        raise HTTPException(status_code=404, detail=f"user does not exist")
 
 
     user.is_loggedin = False
@@ -277,15 +277,15 @@ def verify_2FA_code(
     
     token_expired: bool = security.verify_token(timed_token)
     if not token_expired:
-        raise HTTPException(status_code=400, detail="Token Expired.")
+        raise HTTPException(status_code=401, detail="invalid admin token")
     
     token_user: EmailStr = security.email_from_token(timed_token)
     if not token_user == email_account:
-        raise HTTPException(status_code=400, detail="Users don't match.")
+        raise HTTPException(status_code=401, detail="no match")
 
     good_code: bool = security.verify_2FA(code_2FA, code_user)
     if not good_code:
-        raise HTTPException(status_code=400, detail="Invalid Two Factor Auth code.")
+        raise HTTPException(status_code=401, detail="invalid code")
 
 
     user: models.User = crud.user.get_by_email(db, email=email_account)
@@ -301,7 +301,8 @@ def verify_2FA_code(
             user_role, 
             expires_delta=access_token_expires
         ),
-        "token_type": "bearer"
+        "token_type": "bearer",
+        "user_role": user_role
     }
     
 

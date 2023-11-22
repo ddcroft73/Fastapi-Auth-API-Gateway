@@ -40,11 +40,16 @@ This is a personal project and as it is, is a WIP.
 - Added 2FA support
 - Added Async support to frequent used endpoints, and all io functions.
 - Revised some endpoint names
+#### 11/20/23
+- Updated the status code on HTTPExceptions for easier use by client
+- Update Token schema
+- Updated My logging Tool...
+
 
 ### TODO:
 
 - Add the logic for Admin PIN Access (verify_admin_token), almost done
-- Figure out a production logging setup.
+- Figure out a production logging setup. Working.
 - Finish resend-verification.
 - Finish Create User Admin
 - Rate limiting, 

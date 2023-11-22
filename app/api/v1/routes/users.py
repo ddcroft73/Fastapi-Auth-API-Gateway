@@ -90,13 +90,13 @@ def user_by_email(
     '''
     admin: bool = security.verify_admin_token(admin_token)
     if not admin:
-        raise HTTPException(status_code=400, detail="Invalid Token")   
+        raise HTTPException(status_code=401, detail="invalid admin token")   
      
     user: models.User = crud.user.get_by_email(db,email=email)
     if not user:
         raise HTTPException(
-            status_code=400, 
-            detail=f"No user: {email} in this system."
+            status_code=404, 
+            detail=f"user does not exist"
         )
         
     account: models.Account = user.account 
@@ -123,14 +123,14 @@ async def user_registration(
     if not settings.USERS_OPEN_REGISTRATION:
             raise HTTPException(
                 status_code=403,
-                detail="Open user registration is forbidden for now.",
+                detail="server closed",
             )
     
     user: models.User = crud.user.get_by_email(db, email=user_in.email)
     if user:
         raise HTTPException(
-            status_code=400,
-            detail="The user with this username already exists in the system.",
+            status_code=409,
+            detail="user exists",
         )
     
     try:        
@@ -246,6 +246,9 @@ def update_user_me(
             account_in.contact_method_2FA = contact_method_2FA
         if cell_provider_2FA is not None:
             account_in.cell_provider_2FA = cell_provider_2FA
+        
+        # note the date the account was updated:
+        account_in.last_update_date = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
 
         account = crud.account.update(db, db_obj=current_users_account, obj_in=account_in)   
         account = crud.account.update(db, db_obj=current_users_account, obj_in=account_in)        
@@ -281,23 +284,30 @@ def update_user(
     try:
         admin: bool = security.verify_admin_token(admin_token)
         if not admin:
-            raise HTTPException(status_code=403, detail="Admin token invalid")    
+            raise HTTPException(status_code=401, detail="invalid admin token")    
         
         user: models.user = crud.user.get(db, model_id=user_id)
         account: models.Account = user.account
         
         if user == None or account == None:
-            return {"msg": "That user account does not exist."}
+            raise HTTPException(
+                status_code=404,
+                detail="corrupt data",
+            )
         
         if not user:
             raise HTTPException(
                 status_code=404,
-                detail="The user with this username does not exist in the system",
+                detail="user does not exist",
             )
         
         user_after_update = crud.user.update(db, db_obj=user, obj_in=user_in) 
         user_data_JSON = jsonable_encoder(user_after_update)       
          
+        
+        # note the date the account was updated:
+        account_in.last_update_date = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
+        
         # Hack to fix the Update Bug... update the second addition to the DB twice. In this case I am 
         # trying to update account after user. So I need to run update twice on account. 
         # Im sure I don't know the exact reason this is needed, but this fixes it. I'll spend
@@ -329,12 +339,7 @@ def create_user(
     Create new user by admin
     """
     try:
-        if not settings.USERS_OPEN_REGISTRATION:
-            raise HTTPException(
-                status_code=403,
-                detail="Open user registration is forbidden on this server",
-            )
-        
+        ''''''        
     # code to create a user. This is where admin would create a superUser. 
     # Actually a su can becreated in either endpoint. all it takes is 
     # is_superuser = True, that's it. Do I need 2 seperate ones? I guess yes becasue
@@ -363,9 +368,9 @@ def read_user_by_id(
     
     if user == None or account == None:
         if user == None and account == None:
-            return {"msg": "That record does not exist"}
+            raise HTTPException(status_code=404, detail="record does not exist")
         else:
-            return {"msg": "Either User or Account are corrupt."}
+            raise HTTPException(status_code=404, detail="corrupt data")
 
     return schemas.UserAccount(
         user=jsonable_encoder(user), 
@@ -386,14 +391,14 @@ def delete_user(
     '''
     admin: bool = security.verify_admin_token(admin_token)
     if not admin:
-        raise HTTPException(status_code=403, detail="Admin token invalid")    
+        raise HTTPException(status_code=401, detail="admin token invalid")    
     
     user: models.User = crud.user.get(db, model_id=user_id)
 
     if not user:
         raise HTTPException(
                 status_code=404,
-                detail="The user with this username does not exists in the system",
+                detail="user does not exist",
             )
     
     crud.user.remove(db, model_id=user_id)
