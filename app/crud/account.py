@@ -99,6 +99,7 @@ class CRUDAccount(CRUDBase[Account, AccountCreate, AccountUpdate]):
             return None
         if not verify_password(pin, account.hashed_admin_PIN):
             return None
+        
         return account
 
 account = CRUDAccount(Account)

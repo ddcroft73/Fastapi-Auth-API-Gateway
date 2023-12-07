@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Union, Annotated
+from typing import Any, List, Optional, Union, Annotated, Dict
 from datetime import datetime
 from time import sleep
 
@@ -7,7 +7,7 @@ from fastapi import (
     Body, 
     Depends, 
     HTTPException, 
-    Request
+    Request, Query
 )
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse 
@@ -117,7 +117,7 @@ async def user_registration(
 ) -> Any:
     """
       New User Registration.
-      THis endpoint does not require a token of anykind. 
+      THis endpoint does not require a token of any kind. 
     """
 
     if not settings.USERS_OPEN_REGISTRATION:
@@ -167,7 +167,7 @@ async def user_registration(
     except Exception as err:
         # incase of error make sure no data is saved. Dont want a user without an account and vice versa
         db.rollback()
-        logzz.error(f"Endpoint -> api/v1/users/registration - user_registration(): \n{str(err)} ")
+        logzz.error(f"Endpoint -> api/v1/users/registration - user_registration(): \n{str(err)} ", timestamp=True)
 
 
 #
@@ -264,9 +264,6 @@ def update_user_me(
 
 
 #/api/v1/users/update/{user_id}
-
-#NEED figure out why the second update (account) does not save. User only saves, and account will if i change the order
-# and then user will not...
 @router.put("/update/{user_id}", response_model=Union[schemas.UserAccount, schemas.Msg])
 def update_user(
     *,
@@ -356,6 +353,7 @@ def create_user(
 @router.get("/{user_id}", response_model=Union[schemas.UserAccount, schemas.Msg])
 def read_user_by_id(
     user_id: int,
+    admin_token: str = Query(...),
     current_user: models.User = Depends(deps.get_current_active_superuser),
     db: Session = Depends(deps.get_db),
 ) -> Any:
@@ -363,6 +361,12 @@ def read_user_by_id(
     Get a specific user by id.
     We need to return The User and account info
     """
+
+    admin: bool = security.verify_admin_token(admin_token)
+    if not admin:
+        raise HTTPException(status_code=401, detail="admin token invalid")    
+    
+
     user: models.User = crud.user.get(db, model_id=user_id)
     account: models.Account = user.account if user is not None else None 
     

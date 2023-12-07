@@ -30,9 +30,8 @@ from app.mail_utils import (
     verify_password_reset_token,
     verify_emailVerify_token,
     generate_verifyemail_token,
-    verify_email
-)
-#from app.email_templates.email_2FA_code import build_template_2FA_code
+    verify_email as Verify_Email # Alias so it doesnt call the loacl 
+)                                # function by the same name. I just ran out of ways to say verify email
 
 router = APIRouter()
 
@@ -52,9 +51,7 @@ async def login_access_token(
     """
     def save_login_information() -> None:
         '''
-          Nested helper to mark user as logged in. These attributes
-          come into play if I need to revoke a users tokens based on the date
-          they were created. 
+          Nested helper to mark user as logged in. 
         '''
         current_time: str = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
         account = models.Account = user.account #crud.account.get_by_user_id(db, user_id=user.id)
@@ -65,44 +62,91 @@ async def login_access_token(
         db.add(user)
         db.add(account)
         db.commit()
+
+        logzz.login(f"User: {form_data.username} logged in from: {request.client.host}", timestamp=1)
      
-    user: models.User = crud.user.authenticate(
-        db, 
+    user: models.User = crud.user.authenticate(db, 
         email=form_data.username, 
         password=form_data.password
     )        
 
     if not user:
-        raise HTTPException(status_code=401, detail="wrong credentials")
+        raise HTTPException(
+            status_code=401, detail="wrong credentials"
+        )
     elif not crud.user.is_active(user):
-        raise HTTPException(status_code=401, detail="inactive user")
+        raise HTTPException(
+            status_code=401, detail="inactive user"
+        )
+    elif not crud.user.is_verified(user):
+        logzz.info(f"{user.email} attempted a login before verification.")
+        raise HTTPException(
+            status_code=401, detail="non-verified"
+        )
+    
+    '''elif crud.user.is_account_locked(user):
+        raise HTTPException(status_code=403, detail="locked out")'''
     
     save_login_information()    
 
+    if crud.user.is_superuser(user):
+          user_role ='admin'
+    else: user_role = 'user'
+    
+    # BRANCH Off to handle 2FA
     if user.account.use_2FA:      
         token_2FA: schemas.TwoFactorAuth = await security.send_2FA_code(    
-            user.id, 
-            user.email, 
-            user.phone_number,  
-            user.account.contact_method_2FA
+            user_id=user.id, 
+            user_email=user.email, 
+            user_phone_number=user.phone_number,  
+            contact_method_2FA=user.account.contact_method_2FA,
+            user_role=user_role
         )   
-        return schemas.TwoFactorAuth(code=token_2FA.code, token=token_2FA.token)
-    # 
-    # set the expire time and the user role to be encoded
-    #
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)    
-    if crud.user.is_superuser(user):
-         user_role ='admin'
-    else:
-        user_role = 'user'
-
-    token: str = security.create_access_token(
-        user.id, 
-        user_role, 
-        expires_delta=access_token_expires
+        return schemas.TwoFactorAuth(
+            code=token_2FA.code, token=token_2FA.token, user_role=user_role
+        )    
+    
+    # No 2Fa issue the token
+    access_token_expires: timedelta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)      
+    access_token: str = security.create_access_token(
+        subject=user.id, user_role=user_role, expires_delta=access_token_expires
     )
-    return schemas.Token(access_token=token, token_type="bearer", user_role=user_role)
+
+    return schemas.Token(
+        access_token=access_token, token_type="bearer", user_role=user_role
+    )
         
+
+#/api/v1/auth/login/verify-admin-pin/    http://192.168.12.189:8015/api/v1/auth/login/verify-admin-pin?pin_number=111111
+
+@router.post("/login/verify-admin-pin/", response_model=schemas.AdminToken)
+async def verify_admin_pin(
+    *,
+    db: Session = Depends(deps.get_db),
+    pin_number: str = Query(...) ,
+    current_superuser: models.User = Depends(deps.get_current_active_superuser),
+) -> Any:
+        
+    
+    admin: models.Account = crud.account.check_PIN(db,
+        pin=pin_number, 
+        user_id=current_superuser.account.user_id
+    )
+     
+    if not admin:
+        raise HTTPException(
+            status_code=401, detail="wrong pin number"
+        )
+    
+    # All good now set up the Admin pin and return it. 
+    admin_token_expires: timedelta = timedelta(minutes=settings.ADMIN_TOKEN_EXPIRE_MINUTES)  
+    admin_token: str = security.create_admin_token(
+        subject=admin.user_id, expires_delta=admin_token_expires
+    )
+
+    return schemas.AdminToken(token=admin_token)
+
+
 
 #
 #/api/v1/auth/login/test-token
@@ -138,8 +182,7 @@ async def recover_password(
 
     if not user:
         raise HTTPException(
-            status_code=404,
-            detail="user does not exist",
+            status_code=404, detail="user does not exist",
         )        
     password_reset_token = generate_password_reset_token(email=email)
 
@@ -164,17 +207,19 @@ def reset_password(
     """
     email: Optional[EmailStr] = verify_password_reset_token(token)
     if not email:
-        raise HTTPException(status_code=401, detail="invalid token")
-    
+        raise HTTPException(
+            status_code=401, detail="invalid token"
+        )    
     user: models.User = crud.user.get_by_email(db, email=email)
     if not user:
         raise HTTPException(
-            status_code=404,
-            detail="user does not exist",
-        )
+            status_code=404, detail="user does not exist",
+        )    
     
-    elif not crud.user.is_active(user):
-        raise HTTPException(status_code=401, detail="inactive user")
+    if not crud.user.is_active(user):
+        raise HTTPException(
+            status_code=401, detail="inactive user"
+        )
     
     hashed_password: str = get_password_hash(new_password)
     user.hashed_password = hashed_password
@@ -184,6 +229,21 @@ def reset_password(
 
     logzz.info(f'User: {email} changed password.', timestamp=True)
     return {"msg": "Password updated successfully."}
+
+
+
+@router.put("/resend-verification/", response_model=schemas.Msg)
+async def resend_verification(email: EmailStr = Query(...)):
+    email_token: str = generate_verifyemail_token(email)
+    
+    await Verify_Email(
+        email_to=email, 
+        email_username=email,
+        token=email_token
+    )
+
+    logzz.info(f'User: {email} was sent another verify email token.', timestamp=True)
+    return {"msg": f"Email verification Re-sent to: {email} "}
 
 
 
@@ -197,16 +257,18 @@ def verify_email(
     '''
     email: Optional[str] = verify_emailVerify_token(token)
     if not email:
-        raise HTTPException(status_code=401, detail="invalid token")
-    
+        raise HTTPException(
+            status_code=401, detail="invalid token"
+        )    
     user: models.User = crud.user.get_by_email(db, email=email)
     if not user:
         raise HTTPException(
-            status_code=404,
-            detail="user does not exist",
+            status_code=404, detail="user does not exist",
         )
     elif not crud.user.is_active(user):
-        raise HTTPException(status_code=401, detail="inactive user")
+        raise HTTPException(
+            status_code=401, detail="inactive user"
+        )
     
 
     user.is_verified = True    
@@ -217,16 +279,6 @@ def verify_email(
     return {"msg": "Email Verified. User Ok to login"}
 
 
-@router.put("/resend-verification/", response_model=schemas.Msg)
-async def resend_verification(email: EmailStr = Query(...)):
-    email_token = generate_verifyemail_token(email)
-    await verify_email(
-        email_to=email, 
-        email_username=email,
-        token=email_token
-    )
-    logzz.info(f'User: {email} was sent another verify email token.', timestamp=True)
-    return {"msg": f"Email verification Re-sent to: {email} "}
 
 #
 #  LOG_OUT USER by user_id
@@ -244,12 +296,15 @@ def logout_user(
     '''    
     admin: bool = security.verify_admin_token(admin_token)
     if not admin:
-        raise HTTPException(status_code=401, detail="invalid admin token")
+        raise HTTPException(
+            status_code=401, detail="invalid admin token"
+        )
     
     user: models.User = crud.user.get(db, model_id=user_id)
     if not user:
-        raise HTTPException(status_code=404, detail=f"user does not exist")
-
+        raise HTTPException(
+            status_code=404, detail=f"user does not exist"
+        )
 
     user.is_loggedin = False
     db.add(user) 
@@ -261,7 +316,7 @@ def logout_user(
     ) 
 
 
-@router.put("/2FA/verify-2FA-code/", response_model=Union[schemas.Token, str])
+@router.put("/2FA/verify-2FA-code/", response_model=schemas.Token)
 def verify_2FA_code(
     *,
     db: Session = Depends(deps.get_db),
@@ -271,38 +326,72 @@ def verify_2FA_code(
     timed_token: str = Body(...),    
 ) -> Any:
     '''
-      Verifies the code the user input for 2FA. 
+      Verifies the code the user input for 2FA.  And issues an Access token
+      on success.
     '''    
     user_role: str 
     
     token_expired: bool = security.verify_token(timed_token)
     if not token_expired:
-        raise HTTPException(status_code=401, detail="invalid admin token")
-    
+        raise HTTPException(
+            status_code=401, detail="10 minutes. Token expired."
+        )     
     token_user: EmailStr = security.email_from_token(timed_token)
     if not token_user == email_account:
-        raise HTTPException(status_code=401, detail="no match")
-
+        raise HTTPException(
+            status_code=401, detail="Invalid email."
+        )
     good_code: bool = security.verify_2FA(code_2FA, code_user)
     if not good_code:
-        raise HTTPException(status_code=401, detail="invalid code")
-
+        raise HTTPException(
+            status_code=401, detail="Codes do not match."
+        )
 
     user: models.User = crud.user.get_by_email(db, email=email_account)
     if crud.user.is_superuser(user):
         user_role ='admin'
     else:
         user_role = 'user'
+
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         
     return {
         "access_token": security.create_access_token(
-            user.id, 
-            user_role, 
-            expires_delta=access_token_expires
+            subject=user.id, user_role=user_role, expires_delta=access_token_expires
         ),
         "token_type": "bearer",
         "user_role": user_role
     }
     
 
+
+@router.put("/2FA/resend-2FA-code/", response_model=schemas.TwoFactorAuth)
+async def resend_2FA_code(
+    *,
+    db: Session = Depends(deps.get_db),
+    email: str = Query(...) ,
+) -> Any:
+    
+    user: crud.user.get_by_email(db, email)
+    
+    if not user:
+        raise HTTPException(
+            status_code=404, detail="user does not exist"
+        )
+    
+    user_role: str = "admin" if crud.user.is_superuser(user) else "user"
+
+    token_2FA: schemas.TwoFactorAuth = await security.send_2FA_code(    
+        user_id=user.id, 
+        user_email=user.email, 
+        user_phone_number=user.phone_number,  
+        contact_method_2FA=user.account.contact_method_2FA,
+        user_role=user_role
+    )    
+    
+    msg: str = f"2FA code resent to: {email if user.account.contact_method_2FA == 'email' else user.phone_number}" 
+    logzz.info(msg, timestamp=1)
+
+    return schemas.TwoFactorAuth(
+        code=token_2FA.code, token=token_2FA.token, user_role=user_role
+    )

@@ -20,11 +20,13 @@ class Settings(BaseSettings):
     LOG_ARCHIVE_DIRECTORY: str = f"{LOG_DIRECTORY}/log-archives"
     DEFAULT_LOG_FILE: str = f"{LOG_DIRECTORY}/DEFAULT-app-logs.log"  # This where all log entries go If a destination is not specified.
     
-    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = [
-        'http://localhost:3001', 
-        'http://localhost', 
-        'http://localhost:3000'       
-    ]  # development: FrontEnd
+    BACKEND_CORS_ORIGINS: List[str] = [
+        'http://192.168.12.218:3001', # Laptop
+        'http://192.168.12.189:3000', # Desktop
+        'http://192.168.12.189:8015', # Desktop
+        'http://localhost:3000', 
+        'http://localhost:3001',
+    ] 
 
     @validator("BACKEND_CORS_ORIGINS", pre=True)
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
@@ -58,25 +60,26 @@ class Settings(BaseSettings):
     EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 24
     TWO_FACTOR_AUTH_EXPIRE_MINUTES: int = 10
     VERIFY_EMAIL_EXPIRE_HOURS: int= 24
-    ADMIN_TOKEN_EXPIRE_TIME_MINUTES: int = 10
+    ADMIN_TOKEN_EXPIRE_TIME_MINUTES: int = 30
 
     #
     # FOR DEVELOPMENT ONLY:
-    #   The IP Address of the machine is picked up dynamically before the stack starts. Since the services are all in docker
-    #   containers, I need the actual machine IP Address to be able to send requests to the email service, or any other
-    #   service on the dev machine. localhost would work fine for this service. but not for others I need to contact. 
+    #   The IP Address of the machine (HOST_IP_ADDRESS) is picked up dynamically before the stack starts. Since the services
+    #   are all in docker containers, I need the actual machine IP Address to be able to send requests to the email service,
+    #   or any other service on the dev machine. localhost would work fine for this service. but not for others I need to contact. 
     #   I had a couple other choice, Dedicated Docker Network, or add all services to the same docker-compose file, but 
     #   this approach seems easy enough. 
     #
-    SERVER_HOST: str = f"http://localhost:8015"  
-    EMAIL_API_HOST: str = f"http://{os.getenv('HOST_IP_ADDRESS')}:8014" #/192.168.12.130 This is dynamic, hence the code. 
+    SERVER_HOST: str = f"http://192.168.12.189:8015"                     #f"http://localhost:8015"  
+    EMAIL_API_HOST: str = f"http://{os.getenv('HOST_IP_ADDRESS')}:8014"  #f"http://192.168.12.218:8014"  #
     
     EMAILS_ENABLED: bool = True  #Off to debug
+    SEND_2FA_NOTIFICATIONS: bool = True
     EMAIL_FROM: EmailStr = 'ddc.dev.python@gmail.com' # until I get a domain (decide on a name), and an email service with the same name
     USERS_OPEN_REGISTRATION: bool = True
+
     # This data is added to the API_KEY in order to create the Admin Token. This ensures that the Admin token is totally
     # diffferent than a normal "user" token that is issued with succesful login. This effectively chnages to another API Key
-    ADMIN_API_KEY: str = 'HDG673L2MNDUI76E'
-    
+    ADMIN_API_KEY: str = 'HDG673L2MNDUI76E'    
   
 settings = Settings()

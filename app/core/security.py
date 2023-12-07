@@ -43,12 +43,30 @@ def create_access_token(
     encoded_jwt = jwt.encode(to_encode, settings.API_KEY, algorithm=settings.ALGORITHM)    
     return encoded_jwt
 
-def create_admin_token() -> str:
+
+def create_admin_token(
+    subject: Union[str, Any], expires_delta: timedelta = None
+) -> str:
     '''
         The token an admin must use to perform any actions on other users, or on the 
-        system in general. This token will be good for no more than 1 hour. 
+        system in general. This token will be good for no more than 1/2 hour. 
+        This token uses a variation of the Applications API key. 
     '''
-    return
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(
+            minutes=settings.ADMIN_TOKEN_EXPIRE_MINUTES
+        )
+    to_encode = {
+        "exp": expire, 
+        "sub": str(subject)
+    }
+
+    API_KEY: str = settings.API_KEY + settings.ADMIN_API_KEY
+    encoded_jwt = jwt.encode(to_encode, API_KEY, algorithm=settings.ALGORITHM)   
+
+    return encoded_jwt
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -59,12 +77,23 @@ def get_password_hash(password: str) -> str:
 
 
 # Still working on this
-def verify_admin_token( token: str) -> bool:
+def verify_admin_token(token: str) -> bool:
     '''
         delete all this and just use verify_token?
         Right now Im just sending them through for debugging
     '''
+
+    '''API_KEY: str = settings.API_KEY + settings.ADMIN_API_KEY
+    try:
+        jwt.decode(
+            token, API_KEY, algorithms=[settings.ALGORITHM]
+        )  
+        
+    except (JWTError, ValidationError):
+        return False    '''   
+    
     return True
+
 
 
 def generate_singleuse_token(user_id: int, email: str, expire_minutes: int = 5) -> str:
@@ -86,10 +115,7 @@ def generate_singleuse_token(user_id: int, email: str, expire_minutes: int = 5) 
 def verify_2FA(users_code: str, real_code: str):
     '''
       Compares the token from the User and the token that was created to see if match
-      The users code should be formatted with a - at the 4th place, and upper case.    
-      it will be sent to the server witout the hyphen  
     '''    
-    users_code = f'{users_code[0:3].upper()}-{users_code[3:].upper()}'
     if users_code != real_code:
         return False
     return True
@@ -97,7 +123,8 @@ def verify_2FA(users_code: str, real_code: str):
 
 def verify_token(token: str) -> bool:
     '''
-       Used to verify admin, and tokens dealing with 2fa.
+       Used tokens dealing with 2fa. and single tokens used to send requests to 
+       other APIS.
     '''
     try:
         jwt.decode(
@@ -105,24 +132,29 @@ def verify_token(token: str) -> bool:
         )  
         
     except (JWTError, ValidationError):
-        return False       
-    
+        return False           
     return True
 
-def email_from_token(token: str) -> str:
 
-    token_ = jwt.decode(
+def email_from_token(token: str) -> str:
+    '''
+    Extracts the email address from a token. This is sused to compare the email in a token
+    to an email of a user when verifying 2fa, etc.
+    '''
+    _token = jwt.decode(
         token, settings.API_KEY, algorithms=[settings.ALGORITHM]
     )
-    return token_["email"]
+    return _token["email"]
+
+
 
 async def send_2FA_code(
     user_id: int ,        
+    contact_method_2FA: str,        
     user_email: str,           
-    user_phone_number: str,  
-    contact_method_2FA: str            
-) -> schemas.TwoFactorAuth:
-    
+    user_phone_number: str=None,      
+    user_role: str=None
+) -> schemas.TwoFactorAuth:    
     '''
       Generates and sends a 2FA code to the user via sms or email.
     '''      
@@ -130,27 +162,29 @@ async def send_2FA_code(
         '''
         Generates a 2FA code.
         Code should be 6 Characters letters and numbers
-        ex. B5R-922 or XXR-XNR, etc.
+        ex. B5R922 or XXRXNR, etc.
         '''  
         characters = string.ascii_uppercase + "0123456789"
-        code_2FA = "".join(choice(characters) if pos != 3 else "-"  for pos in range(7)) 
+        code_2FA = "".join(choice(characters) for _ in range(6)) 
         return code_2FA
     
 
     code_2FA: str = generate_2FA_code()
     token_2FA: str = generate_singleuse_token(
-        user_id, 
-        user_email,
-        settings.TWO_FACTOR_AUTH_EXPIRE_MINUTES
+        user_id=user_id, email=user_email, expire_minutes=settings.TWO_FACTOR_AUTH_EXPIRE_MINUTES
     )    
-    # TEXT
-    if contact_method_2FA == "sms":
+    
+
+    if contact_method_2FA in ["sms", "cell", "text"]:
         message: str = (f"Your {settings.PROJECT_NAME} verification code is: {code_2FA} "
                         f"\n\nThis code will expire in {settings.TWO_FACTOR_AUTH_EXPIRE_MINUTES} minutes. "
                         "Do not share this code with anyone.")
-        await send_sms(message, user_phone_number, token_2FA)
-    
-    # EMAIL
+        
+        if settings.SEND_2FA_NOTIFICATIONS:
+            await send_sms(
+                msg=message, cell_number=user_phone_number, token=token_2FA
+            )
+     
     elif contact_method_2FA == "email":
         email_obj = schemas.Email(
             email_to=user_email, 
@@ -159,6 +193,9 @@ async def send_2FA_code(
             message=build_template_2FA_code(code_2FA=code_2FA, email=user_email),
             user_id=user_email
         )
-#        await send_email(email_obj, token_2FA)       So I don't get a million emails when debugging
+        if settings.SEND_2FA_NOTIFICATIONS:
+           await send_email(email=email_obj, token=token_2FA)      
     
-    return schemas.TwoFactorAuth(code=code_2FA, token=token_2FA) 
+    return schemas.TwoFactorAuth(
+        code=code_2FA, token=token_2FA, user_role=user_role
+    ) 

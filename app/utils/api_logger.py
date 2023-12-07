@@ -214,7 +214,8 @@ class Archive():
             
 
 class APILogger():   
-
+    
+    # Hard coding the locations to stop circular imports anytime I would import settings and logzz in the same module
     LOG_DIRECTORY: str = "./logs"   
     LOG_ARCHIVE_DIRECTORY: str = "./logs/log-archives"
     DEFAULT_LOG_FILE: str = "./logs/DEFAULT-app-logs.log"

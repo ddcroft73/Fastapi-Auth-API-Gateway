@@ -84,7 +84,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     def is_superuser(self, user: User) -> bool:
         return user.is_superuser
     
-    def user_is_verified(self, user: User) -> bool:
+    def is_verified(self, user: User) -> bool:
         return user.is_verified
     
     def user_phone_number(self, user: User) -> str:

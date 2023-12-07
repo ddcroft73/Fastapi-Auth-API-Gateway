@@ -9,8 +9,11 @@ from app.core.config import settings
 from app.utils.api_logger import logzz
 from pydantic.networks import EmailStr
 
-# I need to come up with a more secure way to communicate with the email service. Just a token
-# is not good enough
+
+
+"""
+  I need to find a more permanent Home for this script. Can't believe it just got stuck in app/
+"""
 
 async def send_email(email: schemas.Email, token: str) -> None:   
     '''
@@ -35,6 +38,7 @@ async def send_email(email: schemas.Email, token: str) -> None:
             json=email.dict()
         )
     return response.json()
+
 
 async def send_sms(msg: str, cell_number: str, token: str) -> None:
     ''''''
