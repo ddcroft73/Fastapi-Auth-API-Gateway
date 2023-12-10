@@ -93,8 +93,8 @@ class CRUDAccount(CRUDBase[Account, AccountCreate, AccountUpdate]):
         return super().update(db, db_obj=db_obj, obj_in=update_data)
     
     def check_PIN(self, db: Session, *, pin: str, user_id: int) -> Optional[Account]:
-        account = self.get_by_user_id(db, user_id)
-
+        account = self.get_by_user_id(db, user_id=user_id)
+        
         if not account:
             return None
         if not verify_password(pin, account.hashed_admin_PIN):

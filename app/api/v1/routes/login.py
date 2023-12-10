@@ -33,6 +33,8 @@ from app.mail_utils import (
     verify_email as Verify_Email # Alias so it doesnt call the loacl 
 )                                # function by the same name. I just ran out of ways to say verify email
 
+import logging
+
 router = APIRouter()
 
 #
@@ -69,11 +71,13 @@ async def login_access_token(
         email=form_data.username, 
         password=form_data.password
     )        
-
+     # This is also true if the user does not exist...
     if not user:
         raise HTTPException(
             status_code=401, detail="wrong credentials"
         )
+
+
     elif not crud.user.is_active(user):
         raise HTTPException(
             status_code=401, detail="inactive user"
@@ -119,20 +123,22 @@ async def login_access_token(
 
 #/api/v1/auth/login/verify-admin-pin/    http://192.168.12.189:8015/api/v1/auth/login/verify-admin-pin?pin_number=111111
 
-@router.post("/login/verify-admin-pin/", response_model=schemas.AdminToken)
-async def verify_admin_pin(
+@router.post("/login/verify-admin-pin", response_model=schemas.AdminToken)
+def verify_admin_pin(
     *,
+    superuser: models.User = Depends(deps.get_current_active_superuser),
     db: Session = Depends(deps.get_db),
-    pin_number: str = Query(...) ,
-    current_superuser: models.User = Depends(deps.get_current_active_superuser),
+    pin_number: str = Query(...),
 ) -> Any:
-        
-    
-    admin: models.Account = crud.account.check_PIN(db,
-        pin=pin_number, 
-        user_id=current_superuser.account.user_id
-    )
      
+    logzz.info(f"pin: {pin_number}")
+
+    admin: models.Account = crud.account.check_PIN(
+        db,
+        pin=pin_number, 
+        user_id=superuser.account.user_id
+    )    
+
     if not admin:
         raise HTTPException(
             status_code=401, detail="wrong pin number"
@@ -143,8 +149,14 @@ async def verify_admin_pin(
     admin_token: str = security.create_admin_token(
         subject=admin.user_id, expires_delta=admin_token_expires
     )
-
+    
     return schemas.AdminToken(token=admin_token)
+
+
+
+
+
+
 
 
 
