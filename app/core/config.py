@@ -61,18 +61,27 @@ class Settings(BaseSettings):
     TWO_FACTOR_AUTH_EXPIRE_MINUTES: int = 10
     VERIFY_EMAIL_EXPIRE_HOURS: int= 24
     ADMIN_TOKEN_EXPIRE_MINUTES: int = 30
+ 
+    # 
+    # DEVelopment IP addresses
+    #  
+    SERVER_PORT: str = "8015"
+    EMAIL_PORT: str = "8014"
 
-    #
-    # FOR DEVELOPMENT ONLY:
-    #   The IP Address of the machine (HOST_IP_ADDRESS) is picked up dynamically before the stack starts. Since the services
-    #   are all in docker containers, I need the actual machine IP Address to be able to send requests to the email service,
-    #   or any other service on the dev machine. localhost would work fine for this service. but not for others I need to contact. 
-    #   I had a couple other choice, Dedicated Docker Network, or add all services to the same docker-compose file, but 
-    #   this approach seems easy enough. 
-    #
-    SERVER_HOST: str = f"http://192.168.12.189:8015"                     #f"http://localhost:8015"  
-    EMAIL_API_HOST: str = f"http://{os.getenv('HOST_IP_ADDRESS')}:8014"  #f"http://192.168.12.218:8014"  #
+    DESKTOP: str = f"http://192.168.12.189:{SERVER_PORT}"
+    LAPTOP: str = f"http://192.168.12.218:{SERVER_PORT}"
+
+    REMOTE: str = DESKTOP  # Changes depending on the computer the server is runnnign on
+    LOCAL: str f"http://localhost:{SERVER_HOST}"
     
+    SERVER_HOST: str = LOCAL                 
+    # WHen using Docker if you are running more than one service on the same computer in order for one to connect to the 
+    # other yo need to get the outer IP address. Only one can use localhost.  In this setup, the email service is 
+    # on the same computer. and this server will be localhost. Or it can use its outer IP address. 
+    EMAIL_API_HOST: str = f"http://{os.getenv('HOST_IP_ADDRESS')}:{EMAIL_PORT}"  #f"http://192.168.12.218:8014"  #
+    
+
+
     EMAILS_ENABLED: bool = True  #Off to debug
     SEND_2FA_NOTIFICATIONS: bool = True
     EMAIL_FROM: EmailStr = 'ddc.dev.python@gmail.com' # until I get a domain (decide on a name), and an email service with the same name
