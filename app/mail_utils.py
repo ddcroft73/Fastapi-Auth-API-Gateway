@@ -1,4 +1,7 @@
-from app.email_templates.verify_email import build_template_verify, build_template_reset
+
+from app.email_templates.verify_email import build_template_verify 
+from app.email_templates.password_reset import build_pword_reset_template
+
 from datetime import datetime, timedelta
 from typing import Optional
 from app import schemas
@@ -12,15 +15,15 @@ from pydantic.networks import EmailStr
 
 
 """
-  I need to find a more permanent Home for this script. Can't believe it just got stuck in app/
+  I need to find a more permanent Home for this script.
 """
 
 async def send_email(email: schemas.Email, token: str) -> None:   
     '''
     Sends a request to the Notification API, to send an Email
     '''
-    email_api_host = settings.EMAIL_API_HOST
-    url = f'{email_api_host}/api/v1/mail/send-email/'
+    email_service_host = settings.EMAIL_SERVICE_HOST
+    url = f'{email_service_host}/api/v1/mail/send-email/'
     headers = {
         'Authorization': f'Bearer {token}',
         'Content-Type': 'application/json'
@@ -66,19 +69,26 @@ async def verify_email(email_to: str, email_username: str, token: str) -> None:
     )
     await send_email(verify_Email, token)
 
+
 async def send_reset_password_email(email_to: str, email_username: str, token: str) -> None:
     project_name = settings.PROJECT_NAME
     subject = f"{project_name} - Password recovery for user {email_username}"
-    server_host = settings.SERVER_HOST    
+    client_host = settings.DESKTOP_CLIENT
+
     #
-    # As with email Verify, Link HEre, Or FE???
+    # The link should send the user to the frontend. A component that requests a password
+    # and the confirmation of said pasword. and then its sent to da server to save as new.         
     #
-    link = f"{server_host}/api/v1/auth/reset-password?token={token}"    
+    #link = f"{server_host}api/v1/auth/reset-password?token={token}"    # NOPE!
+    link: str = f"{client_host}/password-reset?token={token}"
+
     reset_password = schemas.Email(
         email_to=email_to,
         email_from=settings.EMAIL_FROM,
         subject=subject,
-        message=build_template_reset(link, project_name), # This is the HTML for the message
+        message=build_pword_reset_template(
+            link=link, proj_name=project_name, email=email_username
+        ), 
         user_id=email_username
     )     
     await send_email(reset_password, token)

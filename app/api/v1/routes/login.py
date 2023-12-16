@@ -33,7 +33,7 @@ from app.mail_utils import (
     verify_email as Verify_Email # Alias so it doesnt call the loacl 
 )                                # function by the same name. I just ran out of ways to say verify email
 
-import logging
+
 
 router = APIRouter()
 
@@ -76,8 +76,6 @@ async def login_access_token(
         raise HTTPException(
             status_code=401, detail="wrong credentials"
         )
-
-
     elif not crud.user.is_active(user):
         raise HTTPException(
             status_code=401, detail="inactive user"
@@ -86,8 +84,7 @@ async def login_access_token(
         logzz.info(f"{user.email} attempted a login before verification.")
         raise HTTPException(
             status_code=401, detail="non-verified"
-        )
-    
+        )    
     '''elif crud.user.is_account_locked(user):
         raise HTTPException(status_code=403, detail="locked out")'''
     
@@ -110,7 +107,7 @@ async def login_access_token(
             code=token_2FA.code, token=token_2FA.token, user_role=user_role
         )    
     
-    # No 2Fa issue the token
+    # No 2Fa, issue the token
     access_token_expires: timedelta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)      
     access_token: str = security.create_access_token(
         subject=user.id, user_role=user_role, expires_delta=access_token_expires
@@ -122,7 +119,6 @@ async def login_access_token(
         
 
 #/api/v1/auth/login/verify-admin-pin/    http://192.168.12.189:8015/api/v1/auth/login/verify-admin-pin?pin_number=111111
-
 @router.post("/login/verify-admin-pin", response_model=schemas.AdminToken)
 def verify_admin_pin(
     *,
@@ -131,8 +127,6 @@ def verify_admin_pin(
     pin_number: str = Query(...),
 ) -> Any:
      
-    logzz.info(f"pin: {pin_number}")
-
     admin: models.Account = crud.account.check_PIN(
         db,
         pin=pin_number, 
@@ -144,21 +138,12 @@ def verify_admin_pin(
             status_code=401, detail="wrong pin number"
         )
     
-    # All good now set up the Admin pin and return it. 
     admin_token_expires: timedelta = timedelta(minutes=settings.ADMIN_TOKEN_EXPIRE_MINUTES)  
     admin_token: str = security.create_admin_token(
         subject=admin.user_id, expires_delta=admin_token_expires
     )
-    
+    logzz.info(f"An Admin token was generated for: {admin.user.email}", timestamp=True)
     return schemas.AdminToken(token=admin_token)
-
-
-
-
-
-
-
-
 
 #
 #/api/v1/auth/login/test-token
@@ -170,16 +155,17 @@ def test_token(
     """
     Test access token
 
-    Send a token to this endpoint and it will return the info of the user
-    it belongs to.
     """
+    logzz.info(f"Token tested for: {current_user.email}", timestamp=True)
+
     return schemas.UserAccount(
         user=jsonable_encoder(current_user), 
         account=jsonable_encoder(current_user.account)
     ) 
 
+
 #
-#/api/v1/auth/login/password-recovery/{email}
+#/api/v1/auth/password-recovery/{email}
 #
 @router.post("/password-recovery/{email}", response_model=schemas.Msg)
 async def recover_password(
@@ -194,14 +180,19 @@ async def recover_password(
 
     if not user:
         raise HTTPException(
-            status_code=404, detail="user does not exist",
+            status_code=404, detail=f"User {email} does not exist.",
         )        
+    
     password_reset_token = generate_password_reset_token(email=email)
 
     await send_reset_password_email(
-        email_to=user.email, email=email, token=password_reset_token
+        email_to=user.email, email_username=email, token=password_reset_token
     )
-    return {"msg": "Password recovery email sent"}
+    logzz.info(f"A password recovery is in progress for: {email}. An email has been dispatched.")
+    return {
+        "msg": f"A password recovery email has been sent to {email}."
+    }
+
 
 #
 #/api/v1/auth/reset-password/
@@ -220,17 +211,18 @@ def reset_password(
     email: Optional[EmailStr] = verify_password_reset_token(token)
     if not email:
         raise HTTPException(
-            status_code=401, detail="invalid token"
+            status_code=401, detail="Invalid token."
         )    
     user: models.User = crud.user.get_by_email(db, email=email)
     if not user:
         raise HTTPException(
-            status_code=404, detail="user does not exist",
-        )    
-    
+            status_code=404, detail=f"User: {email} does not exist on this system.",
+        )        
     if not crud.user.is_active(user):
         raise HTTPException(
-            status_code=401, detail="inactive user"
+            status_code=401, 
+            detail=f"User: {email} has been deactivated. "
+                    "Contact support; support@lifepackage.net for more information."
         )
     
     hashed_password: str = get_password_hash(new_password)
@@ -239,8 +231,10 @@ def reset_password(
     db.add(user)
     db.commit()
 
-    logzz.info(f'User: {email} changed password.', timestamp=True)
-    return {"msg": "Password updated successfully."}
+    logzz.info(f'User: {email} has changed their password.', timestamp=True)
+    return {
+        "msg": f"User: {email} successfully updated their password."
+    }
 
 
 
@@ -255,7 +249,9 @@ async def resend_verification(email: EmailStr = Query(...)):
     )
 
     logzz.info(f'User: {email} was sent another verify email token.', timestamp=True)
-    return {"msg": f"Email verification Re-sent to: {email} "}
+    return {
+        "msg": f"Email verification Re-sent to: {email}. "
+    }
 
 
 
@@ -282,14 +278,13 @@ def verify_email(
             status_code=401, detail="inactive user"
         )
     
-
     user.is_verified = True    
+    
     db.add(user)
     db.commit()    
 
     logzz.info(f'Email verified for: {user.email}', timestamp=True)
     return {"msg": "Email Verified. User Ok to login"}
-
 
 
 #

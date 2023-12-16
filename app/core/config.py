@@ -8,7 +8,8 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     API_KEY: str = os.getenv("API_KEY")
 
-    PROJECT_NAME: str = 'Life\After Life Package'
+    PROJECT_NAME = 'Life Package ™'
+
 
     CELERY_BROKER_URL: str = os.getenv('CELERY_BROKER_URL') #"redis://redis:6379/0"
     CELERY_RESULT_BACKEND: str = os.getenv('CELERY_RESULT_BACKEND') #"redis://redis:6379/0"
@@ -60,35 +61,43 @@ class Settings(BaseSettings):
     EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 24
     TWO_FACTOR_AUTH_EXPIRE_MINUTES: int = 10
     VERIFY_EMAIL_EXPIRE_HOURS: int= 24
-    ADMIN_TOKEN_EXPIRE_MINUTES: int = 30
- 
+    ADMIN_TOKEN_EXPIRE_MINUTES: int = 30 
+
     # 
     # DEVelopment IP addresses
     #  
+    # Server
     SERVER_PORT: str = "8015"
-    EMAIL_PORT: str = "8014"
-
-    DESKTOP: str = f"http://192.168.12.189:{SERVER_PORT}"
-    LAPTOP: str = f"http://192.168.12.218:{SERVER_PORT}"
-
-    REMOTE: str = DESKTOP  # Changes depending on the computer the server is runnnign on
-    LOCAL: str f"http://localhost:{SERVER_HOST}"
+    EMAIL_PORT: str = "8014"    
+    DESKTOP_SERVER: str = f"http://192.168.12.189:{SERVER_PORT}"
+    LAPTOP_SERVER: str = f"http://192.168.12.218:{SERVER_PORT}"
+    # Client
+    CLIENT_DESKTOP_PORT: str = "3000"
+    CLIENT_LAPTOP_PORT: str = "3001"
+    DESKTOP_CLIENT: str = f"http://192.168.12.189:{CLIENT_DESKTOP_PORT}"
+    LAPTOP_CLIENT: str = f"http://192.168.12.218:{CLIENT_LAPTOP_PORT}"
     
+    REMOTE: str = DESKTOP_SERVER  # Changes depending on the computer the server is runnnign on
+    LOCAL: str = f"http://localhost:{SERVER_PORT}"    
+    
+    # Final access to this server
     SERVER_HOST: str = LOCAL                 
     # WHen using Docker if you are running more than one service on the same computer in order for one to connect to the 
-    # other yo need to get the outer IP address. Only one can use localhost.  In this setup, the email service is 
-    # on the same computer. and this server will be localhost. Or it can use its outer IP address. 
-    EMAIL_API_HOST: str = f"http://{os.getenv('HOST_IP_ADDRESS')}:{EMAIL_PORT}"  #f"http://192.168.12.218:8014"  #
-    
+    # other you need to get the outer IP address. Only one can use localhost.  In this setup, the email service is 
+    # on the same computer. and this server (AUTH) will be localhost. Or it can use it's outer IP address. 
+    EMAIL_SERVICE_HOST: str = f"http://{os.getenv('HOST_IP_ADDRESS')}:{EMAIL_PORT}"  
+    # 
+    #  END DEV addresses
+    #
 
-
-    EMAILS_ENABLED: bool = True  #Off to debug
+    EMAILS_ENABLED: bool = True  # Off to debug
     SEND_2FA_NOTIFICATIONS: bool = True
     EMAIL_FROM: EmailStr = 'ddc.dev.python@gmail.com' # until I get a domain (decide on a name), and an email service with the same name
     USERS_OPEN_REGISTRATION: bool = True
-
     # This data is added to the API_KEY in order to create the Admin Token. This ensures that the Admin token is totally
     # diffferent than a normal "user" token that is issued with succesful login. This effectively chnages to another API Key
+    # Does it make the app more secure? IDK bt it raises the level of complexity. It means the admin token is totally different from the 
+    # access token or any other token generated on the system.
     ADMIN_API_KEY: str = 'HDG673L2MNDUI76E'    
   
 settings = Settings()
