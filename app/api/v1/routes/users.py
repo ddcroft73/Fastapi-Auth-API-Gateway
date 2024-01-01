@@ -116,8 +116,9 @@ async def user_registration(
     account_in: schemas.AccountCreate,
 ) -> Any:
     """
-      New User Registration.
-      THis endpoint does not require a token of any kind. 
+      New User Registration. 
+      This endpoint does not require a token of any kind. WHen a new user wishes to sign up this is the enpoint that 
+      creates the users account. 
     """
 
     if not settings.USERS_OPEN_REGISTRATION:
@@ -134,11 +135,15 @@ async def user_registration(
         )
     
     try:        
+
+        # Create a user and return the account on success. The users data is spread across 2 differebt tables
+        # I need to use the ID from one to sync with th another
         user: models.User = crud.user.create_no_commit(db, obj_in=user_in)
 
         account_in.user_id=user.id
         account: models.Account = crud.account.create_no_commit(db, obj_in=account_in)
                 
+
         db.commit()
         db.refresh(user)
         db.refresh(account)
@@ -147,10 +152,10 @@ async def user_registration(
         user_data_JSON = jsonable_encoder(user)
         account_data_JSON = jsonable_encoder(account)
 
-        # notify New user they need to verify their Email if enabled.
         if settings.EMAILS_ENABLED and user_in.email:
            verify_email_token: str = generate_verifyemail_token(user_in.email)
-
+           
+           
            await verify_email(
                email_to=user_in.email, 
                email_username=user_in.email, 
@@ -313,7 +318,7 @@ def update_user(
         account_after_update = crud.account.update(db, db_obj=account, obj_in=account_in)   
 
         account_data_JSON = jsonable_encoder(account_after_update)
-
+#        logzz.info(f"Admin: {} updated user: {}")
         return schemas.UserAccount(
             user=user_data_JSON, 
             account=account_data_JSON
@@ -323,7 +328,7 @@ def update_user(
         logzz.error(str(exc))
 
 # api/v1/users/create/
-@router.post("/create", response_model=schemas.UserAccount)
+@router.post("/admin-create-user", response_model=schemas.UserAccount)
 def create_user(
     *,
     db: Session = Depends(deps.get_db),

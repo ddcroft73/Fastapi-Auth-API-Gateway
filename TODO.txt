@@ -36,8 +36,6 @@ initiate the chat, but the user and administartor can chat back and forth. WOuld
 
 I should be able to block or lockout a user.
 
-FINISH:
- Create User Admin endpoint
  
 DATaBASE revision:
   - user:
@@ -46,3 +44,6 @@ DATaBASE revision:
   - account:
      - REMOVE cell_provider_2FA
      - RENAME subscription_type, app_tier
+
+Ad logo to VerifyEmail Email
+Make a server side rendered user verified success page

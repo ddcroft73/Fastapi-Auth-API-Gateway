@@ -122,15 +122,23 @@ async def login_access_token(
 @router.post("/login/verify-admin-pin", response_model=schemas.AdminToken)
 def verify_admin_pin(
     *,
-    superuser: models.User = Depends(deps.get_current_active_superuser),
+    current_user: models.User = Depends(deps.get_current_active_user),
     db: Session = Depends(deps.get_db),
     pin_number: str = Query(...),
-) -> Any:
-     
+) -> Any:     
+
+    # Is this even an ADMIN? 
+    if not crud.user.is_superuser(current_user):
+        logzz.info(f"User: {current_user.email} is trying to access the admin area.", timestamp=1)
+        raise HTTPException(
+            status_code=403,
+            detail="You don't have the priveleges to be here."
+        )
+        
     admin: models.Account = crud.account.check_PIN(
         db,
         pin=pin_number, 
-        user_id=superuser.account.user_id
+        user_id=current_user.account.user_id
     )    
 
     if not admin:
@@ -140,7 +148,8 @@ def verify_admin_pin(
     
     admin_token_expires: timedelta = timedelta(minutes=settings.ADMIN_TOKEN_EXPIRE_MINUTES)  
     admin_token: str = security.create_admin_token(
-        subject=admin.user_id, expires_delta=admin_token_expires
+        subject=admin.user_id, 
+        expires_delta=admin_token_expires
     )
     logzz.info(f"An Admin token was generated for: {admin.user.email}", timestamp=True)
     return schemas.AdminToken(token=admin_token)
@@ -200,7 +209,7 @@ async def recover_password(
 @router.post("/reset-password/", response_model=schemas.Msg)
 def reset_password(
     token: str = Query(...),
-    new_password: str = Body(...),
+    new_password: str = Body(..., embed=True),
     db: Session = Depends(deps.get_db),
 ) -> Any:
     """
@@ -211,7 +220,7 @@ def reset_password(
     email: Optional[EmailStr] = verify_password_reset_token(token)
     if not email:
         raise HTTPException(
-            status_code=401, detail="Invalid token."
+            status_code=403, detail="Invalid Token"
         )    
     user: models.User = crud.user.get_by_email(db, email=email)
     if not user:
@@ -233,7 +242,7 @@ def reset_password(
 
     logzz.info(f'User: {email} has changed their password.', timestamp=True)
     return {
-        "msg": f"User: {email} successfully updated their password."
+        "msg": f"User: {email} has successfully updated their password."
     }
 
 

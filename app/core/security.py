@@ -50,7 +50,7 @@ def create_admin_token(
     '''
         The token an admin must use to perform any actions on other users, or on the 
         system in general. This token will be good for no more than 1/2 hour. 
-        This token uses a variation of the Applications API key. 
+        This token uses a variation of the Applications API key.
     '''
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -60,7 +60,7 @@ def create_admin_token(
         )
     to_encode = {
         "exp": expire, 
-        "sub": str(subject)
+        "sub": str(subject) # The users ID
     }
 
     API_KEY: str = settings.API_KEY + settings.ADMIN_API_KEY
@@ -83,14 +83,14 @@ def verify_admin_token(token: str) -> bool:
         Right now Im just sending them through for debugging
     '''
 
-    '''API_KEY: str = settings.API_KEY + settings.ADMIN_API_KEY
+    API_KEY: str = settings.API_KEY + settings.ADMIN_API_KEY
     try:
         jwt.decode(
             token, API_KEY, algorithms=[settings.ALGORITHM]
         )  
         
     except (JWTError, ValidationError):
-        return False    '''   
+        return False      
     
     return True
 

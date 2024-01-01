@@ -16,7 +16,7 @@ api_router.include_router(
 api_router.include_router(
     auth_router, 
     prefix='/auth', 
-    tags=["login"]
+    tags=["auth"]
 )
 
 api_router.include_router(
