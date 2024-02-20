@@ -97,9 +97,8 @@ class Settings(BaseSettings):
     EMAIL_FROM: EmailStr = 'ddc.dev.python@gmail.com' # until I get a domain (decide on a name), and an email service with the same name
     USERS_OPEN_REGISTRATION: bool = True
     # This data is added to the API_KEY in order to create the Admin Token. This ensures that the Admin token is totally
-    # diffferent than a normal "user" token that is issued with succesful login. This effectively chnages to another API Key
-    # Does it make the app more secure? IDK bt it raises the level of complexity. It means the admin token is totally different from the 
-    # access token or any other token generated on the system.
+    # unique from a normal "user" access token that is issued with succesful login. This effectively chnages to another API Key
+    # Does it make the app more secure? IDK bt it raises the level of complexity... slightly. 
     ADMIN_API_KEY: str = 'HDG673L2MNDUI76E'    
   
 settings = Settings()

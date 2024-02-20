@@ -14,18 +14,18 @@ Began to code in the 2Fa framework.
 Testing the CreateUser, update_me, getAllUsers, get user by id, update by id
 
 
-Need to create some templates for password recovery... working
-Need to implement 2FA, endpoints, etc.... working
+Need to create some templates for password recovery... working    DONE
+Need to implement 2FA, endpoints, etc.... working    DONE
 
 WORK ON 2FA
 work on generating and verifying the admin token.. What should it encode?
 Get it to send 2FA code and verify the code. DONE
-   Sends Ok, work on Verify
+   Sends Ok, work on Verify, DONE
 
-work on create user admin
-* work on resend email verify 
+work on create user admin    DONE
+* work on resend email verify     DONE
 
-* work on admin token logic
+* work on admin token logic    DONE
 
 * adjust the account table. remove the fields that are redundant
 
@@ -46,4 +46,7 @@ DATaBASE revision:
      - RENAME subscription_type, app_tier
 
 Ad logo to VerifyEmail Email
-Make a server side rendered user verified success page
+add Oauth
+add 
+
+

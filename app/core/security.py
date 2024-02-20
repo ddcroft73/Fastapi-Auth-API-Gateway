@@ -58,9 +58,12 @@ def create_admin_token(
         expire = datetime.utcnow() + timedelta(
             minutes=settings.ADMIN_TOKEN_EXPIRE_MINUTES
         )
+    now = datetime.utcnow()
+    
     to_encode = {
         "exp": expire, 
-        "sub": str(subject) # The users ID
+        "nbf": now,
+        "sub": str(subject) # The users Email
     }
 
     API_KEY: str = settings.API_KEY + settings.ADMIN_API_KEY
@@ -83,10 +86,10 @@ def verify_admin_token(token: str) -> bool:
         Right now Im just sending them through for debugging
     '''
 
-    API_KEY: str = settings.API_KEY + settings.ADMIN_API_KEY
+    _API_KEY: str = settings.API_KEY + settings.ADMIN_API_KEY
     try:
         jwt.decode(
-            token, API_KEY, algorithms=[settings.ALGORITHM]
+            token, _API_KEY, algorithms=[settings.ALGORITHM]
         )  
         
     except (JWTError, ValidationError):
@@ -124,16 +127,19 @@ def verify_2FA(users_code: str, real_code: str):
 def verify_token(token: str) -> bool:
     '''
        Used tokens dealing with 2fa. and single tokens used to send requests to 
-       other APIS.
+       other APIS like the notifications api when we need to send a text message or
+       an email. 
     '''
     try:
         jwt.decode(
-            token, settings.API_KEY, algorithms=[settings.ALGORITHM]
-        )  
-        
+            token, 
+            settings.API_KEY,
+            algorithms=[settings.ALGORITHM]
+        )                   
+        return True
+    
     except (JWTError, ValidationError):
-        return False           
-    return True
+        return False  
 
 
 def email_from_token(token: str) -> str:
@@ -142,9 +148,11 @@ def email_from_token(token: str) -> str:
     to an email of a user when verifying 2fa, etc.
     '''
     _token = jwt.decode(
-        token, settings.API_KEY, algorithms=[settings.ALGORITHM]
+        token, 
+        settings.API_KEY, 
+        algorithms=[settings.ALGORITHM]
     )
-    return _token["email"]
+    return _token["email"] if "email" in _token else None
 
 
 
@@ -152,8 +160,9 @@ async def send_2FA_code(
     user_id: int ,        
     contact_method_2FA: str,        
     user_email: str,           
-    user_phone_number: str=None,      
-    user_role: str=None
+    user_phone_number: Optional[str] = None,      
+    provider: Optional[str] = None,
+    user_role: Optional[str] = None
 ) -> schemas.TwoFactorAuth:    
     '''
       Generates and sends a 2FA code to the user via sms or email.
@@ -171,7 +180,9 @@ async def send_2FA_code(
 
     code_2FA: str = generate_2FA_code()
     token_2FA: str = generate_singleuse_token(
-        user_id=user_id, email=user_email, expire_minutes=settings.TWO_FACTOR_AUTH_EXPIRE_MINUTES
+        user_id=user_id, 
+        email=user_email, 
+        expire_minutes=settings.TWO_FACTOR_AUTH_EXPIRE_MINUTES
     )    
     
 
@@ -182,7 +193,10 @@ async def send_2FA_code(
         
         if settings.SEND_2FA_NOTIFICATIONS:
             await send_sms(
-                msg=message, cell_number=user_phone_number, token=token_2FA
+                msg=message, 
+                cell_number=user_phone_number, 
+                provider=provider, 
+                token=token_2FA
             )
      
     elif contact_method_2FA == "email":
@@ -193,8 +207,12 @@ async def send_2FA_code(
             message=build_template_2FA_code(code_2FA=code_2FA, email=user_email),
             user_id=user_email
         )
+        
         if settings.SEND_2FA_NOTIFICATIONS:
-           await send_email(email=email_obj, token=token_2FA)      
+           await send_email(
+               email=email_obj, 
+               token=token_2FA
+            )      
     
     return schemas.TwoFactorAuth(
         code=code_2FA, token=token_2FA, user_role=user_role

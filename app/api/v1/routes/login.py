@@ -100,6 +100,7 @@ async def login_access_token(
             user_id=user.id, 
             user_email=user.email, 
             user_phone_number=user.phone_number,  
+            provider=user.account.cell_provider,
             contact_method_2FA=user.account.contact_method_2FA,
             user_role=user_role
         )   
@@ -148,7 +149,7 @@ def verify_admin_pin(
     
     admin_token_expires: timedelta = timedelta(minutes=settings.ADMIN_TOKEN_EXPIRE_MINUTES)  
     admin_token: str = security.create_admin_token(
-        subject=admin.user_id, 
+        subject=admin.user.email, 
         expires_delta=admin_token_expires
     )
     logzz.info(f"An Admin token was generated for: {admin.user.email}", timestamp=True)
@@ -163,7 +164,6 @@ def test_token(
 ) -> Any:
     """
     Test access token
-
     """
     logzz.info(f"Token tested for: {current_user.email}", timestamp=True)
 
@@ -189,7 +189,7 @@ async def recover_password(
 
     if not user:
         raise HTTPException(
-            status_code=404, detail=f"User {email} does not exist.",
+            status_code=404, detail=f"User does not exist",
         )        
     
     password_reset_token = generate_password_reset_token(email=email)
@@ -275,16 +275,16 @@ def verify_email(
     email: Optional[str] = verify_emailVerify_token(token)
     if not email:
         raise HTTPException(
-            status_code=401, detail="invalid token"
+            status_code=401, detail="Invalid Token"
         )    
     user: models.User = crud.user.get_by_email(db, email=email)
     if not user:
         raise HTTPException(
-            status_code=404, detail="user does not exist",
+            status_code=404, detail="User doesn't exist...",
         )
     elif not crud.user.is_active(user):
         raise HTTPException(
-            status_code=401, detail="inactive user"
+            status_code=401, detail="Account is inactive..."
         )
     
     user.is_verified = True    
@@ -352,7 +352,7 @@ def verify_2FA_code(
         raise HTTPException(
             status_code=401, detail="10 minutes. Token expired."
         )     
-    token_user: EmailStr = security.email_from_token(timed_token)
+    token_user: Optional[EmailStr] = security.email_from_token(timed_token)
     if not token_user == email_account:
         raise HTTPException(
             status_code=401, detail="Invalid email."

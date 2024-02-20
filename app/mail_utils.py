@@ -20,10 +20,14 @@ from pydantic.networks import EmailStr
 
 async def send_email(email: schemas.Email, token: str) -> None:   
     '''
-    Sends a request to the Notification API, to send an Email
+    Sends a request to the Notification API, to send an Email. THis function sends requests
+    to the endpoint that utilizes Celery to send the emails using a task Queue. 
+
+    To change to the endpoint that uses asynchronous only, change send-emal to send-async.
+    in the url string. 
     '''
     email_service_host = settings.EMAIL_SERVICE_HOST
-    url = f'{email_service_host}/api/v1/mail/send-email/'
+    url = f'{email_service_host}/api/v1/mail/send-email/'  
     headers = {
         'Authorization': f'Bearer {token}',
         'Content-Type': 'application/json'
@@ -43,10 +47,15 @@ async def send_email(email: schemas.Email, token: str) -> None:
     return response.json()
 
 
-async def send_sms(msg: str, cell_number: str, token: str) -> None:
-
-
-    ''''''
+async def send_sms(
+        msg: str, 
+        cell_number: str, 
+        provider: str, 
+        token: str
+) -> None:
+    '''
+       
+    '''
 
 async def verify_email(email_to: str, email_username: str, token: str) -> None:
     '''
