@@ -11,6 +11,7 @@ import requests
 from app.core.config import settings
 from app.utils.api_logger import logzz
 from pydantic.networks import EmailStr
+import httpx
 
 
 
@@ -20,11 +21,19 @@ from pydantic.networks import EmailStr
 
 async def send_email(email: schemas.Email, token: str) -> None:   
     '''
-    Sends a request to the Notification API, to send an Email. THis function sends requests
-    to the endpoint that utilizes Celery to send the emails using a task Queue. 
+        Sends a request to the Notification API, to send an Email. This function sends requests
+        to the endpoint that utilizes Celery to send the emails using a task Queue. 
 
-    To change to the endpoint that uses asynchronous only, change send-emal to send-async.
-    in the url string. 
+        To change to the endpoint that uses asynchronous only, change send-emal to send-async.
+        in the url string. 
+
+        Parameters:
+        - email: An instance of the Email schema, containing the email details such as sender, recipient, subject, and body.
+        - token: A string representing the JWT token for authorization.
+
+        Returns:
+        - None
+
     '''
     email_service_host = settings.EMAIL_SERVICE_HOST
     url = f'{email_service_host}/api/v1/mail/send-email/'  
@@ -38,39 +47,82 @@ async def send_email(email: schemas.Email, token: str) -> None:
         timestamp=True
     )
     
-    response = requests.request(
-            "POST", 
-            url, 
-            headers=headers, 
-            json=email.dict()
-        )
-    return response.json()
-
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, headers=headers, json=email.dict())
+        return response.json()
+    
 
 async def send_sms(
+        user_id: int,
+        username: str,
         msg: str, 
         cell_number: str, 
         provider: str, 
         token: str
 ) -> None:
     '''
-       
+    Sends an SMS message using an external API. 
+    (The notifications API that is apart of this backend)
+    
+    Args:
+        user_id (int): THe Id of the user as it is in the database.
+        username (str): The username or usr email of the account holder.
+        msg (str): The message to be sent in the SMS.
+        cell_number (str): The cell number to which the SMS should be sent.
+        provider (str): The SMS service provider to be used.
+        token (str): The authentication token required for accessing the SMS service API.
+        
+    Returns:
+        None
     '''
+    email_service_host = settings.EMAIL_SERVICE_HOST
+    url = f'{email_service_host}/api/v1/sms/send-email-sms/'
 
-async def verify_email(email_to: str, email_username: str, token: str) -> None:
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json'
+    }
+
+    payload = {
+        'message': msg,
+        'phone_number': cell_number,
+        'provider': provider,
+        'user_id': user_id,
+    }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, headers=headers, json=payload)
+        if response.status_code == 201:
+            # Log the user ID,  and the number the message was sent to:
+            logzz.info(f"SMS sent to: Username\email: {username}, User Number: {cell_number}", timestamp=True)
+        else:    
+            logzz.error(f"Failed to send SMS: {response.text}", timestamp=True)
+
+
+async def verify_email(
+        email_to: str, email_username: str, token: str
+) -> None:
     '''
-    send user an email. They need to click the embedded link to verify.
+    Asynchronously verifies the user's email address by sending a verification email.
+
+    Parameters:
+    - email_to (str): The email address of the recipient.
+    - email_username (str): The username associated with the email address.
+    - token (str): The JWT token for authorization.
+
+    Returns:
+    - None
+
+    Raises:
+    - None
+
     '''
     project_name = settings.PROJECT_NAME
     subject = f"{project_name} - Verify Your Email - {email_username}"
-    
-    # Using CLIENT_SERVER because I want to be able to test from any device on the test network.
-    # if I use localhost for instance, I cant use my cellphone to verify because it cant send to localhost. needs the network IP
-   # server_host: str = settings.DESKTOP_SERVER
+        
     client_host: str = settings.DESKTOP_CLIENT
     link = f"{client_host}/routing-verify-email?token={token}"
 
-    #link = f"{server_host}/api/v1/auth/verify-email?token={token}"   
 
     verify_Email = schemas.Email(
         email_to=email_to,
@@ -83,6 +135,17 @@ async def verify_email(email_to: str, email_username: str, token: str) -> None:
 
 
 async def send_reset_password_email(email_to: str, email_username: str, token: str) -> None:
+    '''
+    Sends a reset password email to the specified email address.
+
+    Parameters:
+    - email_to: A string representing the email address of the recipient.
+    - email_username: A string representing the username associated with the email address.
+    - token: A string representing the JWT token for authorization.
+
+    Returns:
+    - None
+    '''    
     project_name = settings.PROJECT_NAME
     subject = f"{project_name} - Password recovery for user {email_username}"
     client_host = settings.DESKTOP_CLIENT
@@ -113,7 +176,7 @@ def generate_password_reset_token(email: EmailStr) -> str:
     '''
     delta = timedelta(hours=settings.VERIFYEMAIL_RESET_TOKEN_EXPIRE_HOURS)
 
-    now = datetime.utcnow()
+    now = datetime.now(datetime.UTC)
     expires = now + delta
     exp = expires.timestamp()
     encoded_jwt = jwt.encode(

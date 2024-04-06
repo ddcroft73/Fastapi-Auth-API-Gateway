@@ -100,7 +100,7 @@ async def login_access_token(
             user_id=user.id, 
             user_email=user.email, 
             user_phone_number=user.phone_number,  
-            provider=user.account.cell_provider,
+            provider=user.cell_provider,
             contact_method_2FA=user.account.contact_method_2FA,
             user_role=user_role
         )   
@@ -388,7 +388,7 @@ async def resend_2FA_code(
     email: str = Query(...) ,
 ) -> Any:
     
-    user: crud.user.get_by_email(db, email)
+    user: models.User = crud.user.get_by_email(db, email)
     
     if not user:
         raise HTTPException(

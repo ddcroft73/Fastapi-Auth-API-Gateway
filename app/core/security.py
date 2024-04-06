@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Any, Union, Optional
 
-from fastapi import HTTPException, status
+#from fastapi import HTTPException, status
 
 from jose import jwt
 from passlib.context import CryptContext
@@ -12,9 +12,9 @@ import string
 from jose.exceptions import ExpiredSignatureError, JWTError
 from pydantic import ValidationError
 
-from app.database.session import SessionLocal
+#from app.database.session import SessionLocal
 
-from app.utils.api_logger import logzz
+#from app.utils.api_logger import logzz
 
 from app import schemas
 from app.email_templates.email_2FA_code import build_template_2FA_code
@@ -28,9 +28,9 @@ def create_access_token(
     subject: Union[str, Any], user_role: str, expires_delta: timedelta = None
 ) -> str:
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(datetime.UTC) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(
+        expire = datetime.now(datetime.UTC) + timedelta(
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
     current_date: str = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
@@ -53,12 +53,12 @@ def create_admin_token(
         This token uses a variation of the Applications API key.
     '''
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(datetime.UTC) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(
+        expire = datetime.now(datetime.UTC) + timedelta(
             minutes=settings.ADMIN_TOKEN_EXPIRE_MINUTES
         )
-    now = datetime.utcnow()
+    now = datetime.now(datetime.UTC)
     
     to_encode = {
         "exp": expire, 
@@ -105,7 +105,7 @@ def generate_singleuse_token(user_id: int, email: str, expire_minutes: int = 5) 
         to connect to another API.  It will always be tied to the user and have
         an expiration date.
     '''
-    expire = datetime.utcnow() + timedelta(minutes=expire_minutes)
+    expire = datetime.now(datetime.UTC) + timedelta(minutes=expire_minutes)
     to_encode = {
         "exp": expire, 
         "sub": str(user_id),
@@ -165,8 +165,23 @@ async def send_2FA_code(
     user_role: Optional[str] = None
 ) -> schemas.TwoFactorAuth:    
     '''
-      Generates and sends a 2FA code to the user via sms or email.
-    '''      
+    Generates and sends a 2FA code to the user via sms or email.
+
+    Args:
+        user_id (int): The ID of the user.
+        contact_method_2FA (str): The contact method for sending the 2FA code (sms or email).
+        user_email (str): The email address of the user.
+        user_phone_number (Optional[str], optional): The phone number of the user. Defaults to None.
+        provider (Optional[str], optional): The SMS service provider to be used. Defaults to None.
+        user_role (Optional[str], optional): The role of the user. Defaults to None.
+
+    Returns:
+        TwoFactorAuth: An object containing the generated 2FA code, token, and user role.
+
+    Raises:
+        None
+
+    '''    
     def generate_2FA_code() -> str:
         '''
         Generates a 2FA code.
@@ -184,16 +199,17 @@ async def send_2FA_code(
         email=user_email, 
         expire_minutes=settings.TWO_FACTOR_AUTH_EXPIRE_MINUTES
     )    
+    # I platyed with this a while to finally arive at this format. The code has to be first in the string, else
+    # nothing but the text after the code will go through. It is not the exact format I would like, but it's functional.
+    text_message: str = code_2FA + f"\nis your 2FA verification code.\nThis code will expire in 10 minutes.\n\nThis message is meant for {user_email} only.\n\nDo not share this code with anyone."
     
-
-    if contact_method_2FA in ["sms", "cell", "text"]:
-        message: str = (f"Your {settings.PROJECT_NAME} verification code is: {code_2FA} "
-                        f"\n\nThis code will expire in {settings.TWO_FACTOR_AUTH_EXPIRE_MINUTES} minutes. "
-                        "Do not share this code with anyone.")
-        
+    if contact_method_2FA == "sms":
+       
         if settings.SEND_2FA_NOTIFICATIONS:
             await send_sms(
-                msg=message, 
+                user_id=user_id,
+                username=user_email,
+                msg=text_message,
                 cell_number=user_phone_number, 
                 provider=provider, 
                 token=token_2FA
@@ -207,7 +223,7 @@ async def send_2FA_code(
             message=build_template_2FA_code(code_2FA=code_2FA, email=user_email),
             user_id=user_email
         )
-        
+
         if settings.SEND_2FA_NOTIFICATIONS:
            await send_email(
                email=email_obj, 

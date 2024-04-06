@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     API_KEY: str = os.getenv("API_KEY")
 
-    PROJECT_NAME = 'Life Package ™'
+    PROJECT_NAME = 'Life Package'
 
 
     CELERY_BROKER_URL: str = os.getenv('CELERY_BROKER_URL') #"redis://redis:6379/0"
@@ -68,6 +68,11 @@ class Settings(BaseSettings):
     # 
     # DEVelopment IP addresses
     #  
+    #    TODO:  Get rid of all this shit. Implement a virual network for the docker containers and 86 all this confusing BS. Originally
+    #    I Did this so I could host either API fron my laptop or Desktop but that really makes no fucking sense because All APIs will be
+    #    hosted from the same machine. Desktop, Laptop will just be Server. 
+    #     Client is the Front end
+    #              
     # Server
     SERVER_PORT: str = "8015"
     EMAIL_PORT: str = "8014"    
@@ -84,6 +89,9 @@ class Settings(BaseSettings):
     
     # Final access to this server
     SERVER_HOST: str = LOCAL                 
+    '''
+       Reconfigue this API to use a virtual network. 
+    '''
     # WHen using Docker if you are running more than one service on the same computer in order for one to connect to the 
     # other you need to get the outer IP address. Only one can use localhost.  In this setup, the email service is 
     # on the same computer. and this server (AUTH) will be localhost. Or it can use it's outer IP address. 
