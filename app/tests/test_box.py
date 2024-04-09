@@ -1,10 +1,37 @@
 
 # This is mearly a script I can run by itself to test out code.
 
+import json
 from datetime import datetime, timezone
-#from app.utils.utils import format_json_string
+from typing import Optional, Union
 
-now = datetime.now(timezone.utc)   # gives the current time in your timezone.. apparently 
-                       # But if previously using utcnow() if fucks everyting up... so use
-                       # .now(timezone.utc)?? 
-print(now)
+'''def format_dict_string(data_dict: dict) -> str:        
+    data_dict = str(data_dict)
+    lines = data_dict.split(', ')
+    formatted_lines = ['\t' + line for line in lines]
+    formatted_data = '\n' + ',\n'.join(formatted_lines) + '\n'
+
+    return formatted_data
+
+
+user_dict = {
+    "username": "userdeftOne@email.com",
+    "login_time": datetime.now(timezone.utc),
+    "ip_address": "209.34.55.124"
+}
+
+user_data = format_dict_string(user_dict)
+print(user_data)'''
+
+def format_dict_string(data_dict: dict) -> str:
+    json_string = json.dumps(data_dict, indent=4, default=str)
+    return json_string
+
+user_dict = {
+    "username": "userdeftOne@email.com",
+    "login_time": datetime.now(timezone.utc),
+    "ip_address": "209.34.55.124"
+}
+
+user_data = format_dict_string(user_dict)
+print(user_data)

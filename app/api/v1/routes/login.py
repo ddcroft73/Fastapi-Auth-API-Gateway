@@ -32,8 +32,6 @@ from app.mail_utils import (
     generate_verifyemail_token,
     verify_email as Verify_Email # Alias so it doesnt call the loacl 
 )                                # function by the same name. I just ran out of ways to say verify email
-from app.utils.utils import format_json_string
-
 
 router = APIRouter()
 
@@ -65,15 +63,18 @@ async def login_access_token(
         db.add(account)
         db.commit()
         
+
         user_data = {
             'username': form_data.username,
             'time_in' : current_time,
             'ip_address': request.client.host
         }
         
-        #writable_data: str = format_json_string(user_data)
-        logzz.login(f"User: {form_data.username} logged in from: {request.client.host}", timestamp=1)
+        logzz.login(
+            user_data, dict_to_string=True
+        ) 
      
+
     user: models.User = crud.user.authenticate(db, 
         email=form_data.username, 
         password=form_data.password

@@ -1,6 +1,6 @@
 from pathlib import Path
 from datetime import datetime, time, timedelta
-import re
+import re, json
 from os.path import join as os_join
 from .file_handler import filesys
 
@@ -278,6 +278,10 @@ class APILogger():
 
         if any(filename is None for filename in file_names):
             self.__set_log_filename(self.DEFAULT_LOG_FILE)
+    
+    def __format_dict_string(self, data_dict: dict) -> str:
+        json_string = json.dumps(data_dict, indent=4, default=str)
+        return json_string
 
     #
     # __save_log_entry().
@@ -372,7 +376,11 @@ class APILogger():
     #
     # Log Message Interfaces
     #
-    def error(self, message: str, timestamp: bool = False) -> None:
+    def error(self, message: str, timestamp: bool = False, dict_to_string: bool = False) -> None:
+        
+        if dict_to_string: 
+            message = self.__format_dict_string(message)
+
         message = f"{Stream.Prefix.ERROR_PRE} {message}"
         self.__save_log_entry(
             message,
@@ -381,7 +389,11 @@ class APILogger():
             self.error_filename
         )       
 
-    def info(self, message: str, timestamp: bool = False) -> None:
+    def info(self, message: str, timestamp: bool = False, dict_to_string: bool = False) -> None:
+        
+        if dict_to_string: 
+            message = self.__format_dict_string(message)
+
         message = f"{Stream.Prefix.INFO_PRE} {message}"
         self.__save_log_entry(
             message,
@@ -390,7 +402,11 @@ class APILogger():
             self.info_filename
         )               
 
-    def warn(self, message: str, timestamp: bool = False) -> None:
+    def warn(self, message: str, timestamp: bool = False, dict_to_string: bool = False) -> None:
+        
+        if dict_to_string: 
+            message = self.__format_dict_string(message)
+
         message = f"{Stream.Prefix.WARN_PRE} {message}"
         self.__save_log_entry(
             message,
@@ -399,7 +415,11 @@ class APILogger():
             self.warning_filename
         )       
 
-    def debug(self, message: str, timestamp: bool = False) -> None:
+    def debug(self, message: str, timestamp: bool = False, dict_to_string: bool = False) -> None:
+        
+        if dict_to_string: 
+            message = self.__format_dict_string(message)
+
         message = f"{Stream.Prefix.DEBUG_PRE} {message}"
         self.__save_log_entry(
             message,
@@ -408,7 +428,11 @@ class APILogger():
             self.debug_filename
         )  
 
-    def login(self, message: str, timestamp: bool = False) -> None:
+    def login(self, message: str, timestamp: bool = False, dict_to_string: bool = False) -> None:
+        
+        if dict_to_string: 
+            message = self.__format_dict_string(message)
+
         message = f"{Stream.Prefix.LOGIN_PRE} {message}"
         self.__save_log_entry(
             message,
