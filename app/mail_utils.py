@@ -2,12 +2,12 @@
 from app.email_templates.verify_email import build_template_verify 
 from app.email_templates.password_reset import build_pword_reset_template
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from app import schemas
 from jose import jwt
 from jose.exceptions import ExpiredSignatureError, JWTError
-import requests
+#import requests  # pretty sure I 86'd this for httpx async
 from app.core.config import settings
 from app.utils.api_logger import logzz
 from pydantic.networks import EmailStr
@@ -50,7 +50,6 @@ async def send_email(email: schemas.Email, token: str) -> None:
     async with httpx.AsyncClient() as client:
         response = await client.post(url, headers=headers, json=email.dict())
         return response.json()
-    
 
 async def send_sms(
         user_id: int,
@@ -103,7 +102,7 @@ async def verify_email(
         email_to: str, email_username: str, token: str
 ) -> None:
     '''
-    Asynchronously verifies the user's email address by sending a verification email.
+    Asynchronously verifies the user's email address by sending an email and awaits the response.
 
     Parameters:
     - email_to (str): The email address of the recipient.
@@ -176,7 +175,7 @@ def generate_password_reset_token(email: EmailStr) -> str:
     '''
     delta = timedelta(hours=settings.VERIFYEMAIL_RESET_TOKEN_EXPIRE_HOURS)
 
-    now = datetime.now(datetime.UTC)
+    now = datetime.now(timezone.utc)
     expires = now + delta
     exp = expires.timestamp()
     encoded_jwt = jwt.encode(

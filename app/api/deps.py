@@ -28,29 +28,37 @@ def get_db() -> Generator:
 def get_current_user(
     db: Session = Depends(get_db), token: str = Depends(reusable_oauth2)
 ) -> models.User:
+    """
+    Retrieves the current user based on the provided token.
+
+    Args:
+        db (Session): The database session obtained from the `get_db` function.
+        token (str): The access token obtained from the client.
+
+    Returns:
+        models.User: The retrieved user from the database.
+
+    Raises:
+        HTTPException: If the user does not exist, the token is expired, or the token is invalid.
+    """
     try:
         payload = jwt.decode(
             token, settings.API_KEY, algorithms=[settings.ALGORITHM]
         )
         token_data = schemas.TokenPayload(**payload)
-    
+
+        user = crud.user.get(db, model_id=token_data.sub)
+        if not user:
+            raise HTTPException(status_code=404, detail="user does not exist")
+
+        return user
+
     except ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="token expired"
-        )
-    
+        raise HTTPException(status_code=401, detail="token expired")
+
     except (JWTError, ValidationError):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="wrong credintials",
-        )
+        raise HTTPException(status_code=403, detail="invalid token or credentials")
     
-    user = crud.user.get(db, model_id=token_data.sub)
-    if not user:
-        raise HTTPException(
-            status_code=404, detail="user does not exist"
-        )
-    
-    return user
 
 
 def get_current_active_user(

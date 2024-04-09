@@ -27,6 +27,7 @@ class Settings(BaseSettings):
         'http://192.168.12.189:8015', # Desktop
         'http://localhost:3000', 
         'http://localhost:3001',
+        'http://192.168.12.114',
     ] 
 
     @validator("BACKEND_CORS_ORIGINS", pre=True)

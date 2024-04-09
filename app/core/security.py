@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Union, Optional
 
 #from fastapi import HTTPException, status
@@ -28,9 +28,9 @@ def create_access_token(
     subject: Union[str, Any], user_role: str, expires_delta: timedelta = None
 ) -> str:
     if expires_delta:
-        expire = datetime.now(datetime.UTC) + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(datetime.UTC) + timedelta(
+        expire = datetime.now(timezone.utc) + timedelta(
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
     current_date: str = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
@@ -53,12 +53,12 @@ def create_admin_token(
         This token uses a variation of the Applications API key.
     '''
     if expires_delta:
-        expire = datetime.now(datetime.UTC) + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(datetime.UTC) + timedelta(
+        expire = datetime.now(timezone.utc) + timedelta(
             minutes=settings.ADMIN_TOKEN_EXPIRE_MINUTES
         )
-    now = datetime.now(datetime.UTC)
+    now = datetime.now(timezone.utc)
     
     to_encode = {
         "exp": expire, 
@@ -105,7 +105,7 @@ def generate_singleuse_token(user_id: int, email: str, expire_minutes: int = 5) 
         to connect to another API.  It will always be tied to the user and have
         an expiration date.
     '''
-    expire = datetime.now(datetime.UTC) + timedelta(minutes=expire_minutes)
+    expire = datetime.utcnow() + timedelta(minutes=expire_minutes)
     to_encode = {
         "exp": expire, 
         "sub": str(user_id),
