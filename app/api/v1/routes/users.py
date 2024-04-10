@@ -57,8 +57,7 @@ def read_users(
     """
     Retrieve users: 
     Pull out all users in the system and return.
-
-    This could get really slow when the users get into the 1000's need to think about this, a lot.
+    Need to refactor this to work with chunks of users data...
     """    
     users = crud.user.get_multi(db, skip=skip, limit=limit)
     user_data: list[schemas.UserAccount] = []
@@ -94,16 +93,11 @@ def user_by_email(
      
     user: models.User = crud.user.get_by_email(db,email=email)
     if not user:
-        raise HTTPException(
-            status_code=404, 
-            detail=f"user does not exist"
-        )
-        
-    account: models.Account = user.account 
-    
+        raise HTTPException(status_code=404, detail=f"user does not exist")
+            
     return schemas.UserAccount(
         user=jsonable_encoder(user), 
-        account=jsonable_encoder(account)
+        account=jsonable_encoder(user.account)
     )
 
 # This will expect info for the User, and info for the users account. It will be sent in 
@@ -117,7 +111,7 @@ async def user_registration(
 ) -> Any:
     """
       New User Registration. 
-      This endpoint does not require a token of any kind. WHen a new user wishes to sign up this is the enpoint that 
+      This endpoint does not require a token of any kind. WHen a new user wishes to signs up this is the enpoint that 
       creates the users account. 
     """
 
