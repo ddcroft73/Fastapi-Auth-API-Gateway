@@ -389,10 +389,18 @@ class APILogger():
             self.error_filename
         )       
 
-    def info(self, message: str, timestamp: bool = False, dict_to_string: bool = False) -> None:
+    def info(self, 
+        message: str, 
+        timestamp: bool = False, 
+        dict_to_string: bool = False, 
+        heading=None
+    ) -> None:
         
         if dict_to_string: 
             message = self.__format_dict_string(message)
+        
+        if heading is not None:
+            Stream.Prefix.INFO_PRE = f"{Stream.Prefix.INFO_PRE}  {heading}\n"
 
         message = f"{Stream.Prefix.INFO_PRE} {message}"
         self.__save_log_entry(
@@ -428,10 +436,18 @@ class APILogger():
             self.debug_filename
         )  
 
-    def login(self, message: str, timestamp: bool = False, dict_to_string: bool = False) -> None:
+    def login(self,
+        message: str, 
+        timestamp: bool = False, 
+        dict_to_string: bool = False,
+        heading=None
+    ) -> None:
         
         if dict_to_string: 
             message = self.__format_dict_string(message)
+        
+        if heading is not None:
+            Stream.Prefix.LOGIN_PRE = f"{Stream.Prefix.LOGIN_PRE}{heading}\n"
 
         message = f"{Stream.Prefix.LOGIN_PRE} {message}"
         self.__save_log_entry(

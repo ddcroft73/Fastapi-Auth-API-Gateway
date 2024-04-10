@@ -1,5 +1,5 @@
 from typing import Any, List, Optional, Union, Annotated, Dict
-from datetime import datetime
+from datetime import datetime, timezone
 from time import sleep
 
 from fastapi import (
@@ -124,7 +124,7 @@ async def user_registration(
     if not settings.USERS_OPEN_REGISTRATION:
             raise HTTPException(
                 status_code=403,
-                detail="server closed",
+                detail="server temporarily closed",
             )
     
     user: models.User = crud.user.get_by_email(db, email=user_in.email)
@@ -153,16 +153,22 @@ async def user_registration(
         account_data_JSON = jsonable_encoder(account)
 
         if settings.EMAILS_ENABLED and user_in.email:
-           verify_email_token: str = generate_verifyemail_token(user_in.email)
-           
-           
+           verify_email_token: str = generate_verifyemail_token(user_in.email)                      
            await verify_email(
                email_to=user_in.email, 
                email_username=user_in.email, 
                token=verify_email_token
            )
-
-        logzz.info(f"New User Created: {user_in.email}", timestamp=1)
+        
+        #
+        log_entry_new_user_created = {
+            "username": user_in.email,
+            "full_name": user_in.full_name,
+            "creation_time": account.creation_date,
+            "user_role": "admin" if user_in.is_superuser else "user",
+            "2FA": account.use_2FA
+        }
+        logzz.info(log_entry_new_user_created, heading="New User Created", dict_to_string=True)
 
         return schemas.UserAccount(
             user=user_data_JSON, 
@@ -345,7 +351,7 @@ def create_user(
     # code to create a user. This is where admin would create a superUser. 
     # Actually a su can becreated in either endpoint. all it takes is 
     # is_superuser = True, that's it. Do I need 2 seperate ones? I guess yes becasue
-    # witht he other I can turn it on and off so that users cant openly reister.
+    # witht he other I can turn it on and off so that users cant openly register.
     # Only I can create them.
     # 
     # Could prove useful if someting goes wrong.   
@@ -355,16 +361,29 @@ def create_user(
 
 
 #/api/v1/users/{user_id}
-@router.get("/{user_id}", response_model=Union[schemas.UserAccount, schemas.Msg])
+@router.get("/{user_id}", response_model=schemas.UserAccount)
 def read_user_by_id(
     user_id: int,
     admin_token: str = Query(...),
-    current_user: models.User = Depends(deps.get_current_active_superuser),
+    current_super_user: models.User = Depends(deps.get_current_active_superuser),
     db: Session = Depends(deps.get_db),
 ) -> Any:
     """
-    Get a specific user by id.
-    We need to return The User and account info
+    Get a specific user by their id.
+
+    Parameters:
+    - user_id (int): The ID of the user to retrieve.
+    - admin_token (str): The admin token for authentication.
+
+    Dependencies:
+    - current_user (models.User): The current authenticated user with superuser privileges.
+    - db (Session): The database session.
+
+    Returns:
+    -schemas.UserAccount: The user and users' account information.
+
+    Raises:
+    - HTTPException: If the admin token is invalid or the user or account does not exist.
     """
 
     admin: bool = security.verify_admin_token(admin_token)
@@ -373,13 +392,22 @@ def read_user_by_id(
     
 
     user: models.User = crud.user.get(db, model_id=user_id)
-    account: models.Account = user.account if user is not None else None 
+    account: models.Account = user.account if user is not None else None     
+
+    if user == None :
+        raise HTTPException(status_code=404, detail="record does not exist")
     
-    if user == None or account == None:
-        if user == None and account == None:
-            raise HTTPException(status_code=404, detail="record does not exist")
-        else:
-            raise HTTPException(status_code=404, detail="corrupt data")
+    # THis sould never, ever happen... but it might. If it does it means there was a problem
+    # when the record was created, or on a subsequent update request. Log it and find the problem
+    if user == None and account is not None:    
+        record_corruption_error = {
+            "error": "A corrupt record was found when attempting to retrieve a users data.",
+            "endpoint": "/api/v1/users/{user_id}",
+            "user_id":  user_id,
+            "time": datetime.now().strftime('%m/%d/%Y %H:%M:%S')
+        }
+        logzz.error(record_corruption_error, dict_to_string=True)        
+        raise HTTPException( status_code=404, detail="corrupt data")
 
     return schemas.UserAccount(
         user=jsonable_encoder(user), 
