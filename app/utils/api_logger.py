@@ -3,10 +3,14 @@ from datetime import datetime, time, timedelta
 import re, json
 from os.path import join as os_join
 from .file_handler import filesys
+from typing import Optional
 
 
 """
 API Logger - 
+
+This little logger has turned out to be a great way to log information for 5 types of information. 
+
 
 This is just a simple way to add a display, if you will, to my APIS. THe nature of a web API doesnt allow you to
 get any decent feedback from the terminal. This little module is compact and it simply allows 
@@ -58,9 +62,9 @@ class ScreenPrinter():
 
 class Archive():
     """
-    How the archiving will work:
+    How the archiving works:
 
-    The maximum size of a log file is set at 1000 lines. This may need to be adjusted. If the class is instantiated
+    The maximum size of a log file is set at 1000 lines. This is 100% adjustable. If the class is instantiated
     with 'archive_log_files = True, then whenever a file reaches the max it will be moved to the archive and a new one
     will be created in its place.
 
@@ -215,7 +219,9 @@ class Archive():
 
 class APILogger():   
     
-    # Hard coding the locations to stop circular imports anytime I would import settings and logzz in the same module
+    # Hard coding the locations to stop circular imports anytime I would import settings and logzz in the same module.
+    # This is not Ideal and totally overlooks a modular approach. But it was a simple fix that will be taken into consideration
+    # In V2. An async version that logs independently for each user in the system.
     LOG_DIRECTORY: str = "./logs"   
     LOG_ARCHIVE_DIRECTORY: str = "./logs/log-archives"
     DEFAULT_LOG_FILE: str = "./logs/DEFAULT-app-logs.log"
@@ -230,6 +236,7 @@ class APILogger():
         archive_log_files: bool = True,
         log_file_max_size: int = 1000,
     ) -> None:
+         # set up the other Objects needed to rn the logging system. 
         self.stream = Stream()
         self.archive = Archive(
             archive_directory=self.LOG_ARCHIVE_DIRECTORY
@@ -252,13 +259,17 @@ class APILogger():
         self.__handle_file_setup()
     
     def setup(self) -> None:
+        '''
+        Allows for outside access to be had 
+        '''
         self.__handle_file_setup()
         
     def __handle_file_setup(self) -> None:
         """
         Handles the creation of any user defined logfiles, the Default
-        log file, and the vreation of the archive directory to be used when archiving
+        log file, and the creation of the archive directory to be used when archiving
         excess lof files.
+
         """
         if self.archive_log_files:
             self.archive.set_archive_directory(self.LOG_ARCHIVE_DIRECTORY)
@@ -279,10 +290,7 @@ class APILogger():
         if any(filename is None for filename in file_names):
             self.__set_log_filename(self.DEFAULT_LOG_FILE)
     
-    def __format_dict_string(self, data_dict: dict) -> str:
-        json_string = json.dumps(data_dict, indent=4, default=str)
-        return json_string
-
+    
     #
     # __save_log_entry().
     #   
@@ -331,6 +339,7 @@ class APILogger():
                 )
 
         # Sometimes message may be None or a dict. Just represent them in string form. 
+        # Not to be confused with the dict_to_string feature. There is no formatting here.
         if message == None: message = "None"
         if isinstance(message, dict):
             message = str(message)        
@@ -351,7 +360,7 @@ class APILogger():
 
 
     def print2_screen(self, message: str, stream: int, timestamp: bool) -> None:
-        """two guesses..."""
+
         msg_prefix: str
 
         if stream == Stream.INFO:
@@ -373,13 +382,33 @@ class APILogger():
 
         self.prnt.to_screen(f"{msg_prefix}{message}")
 
+
+    def __format_dict_string(self, data_dict: dict) -> str:
+        """
+        Simply converts a passed in dict into a string with indentation so it
+        can be written to the logs. The reason I did this was because it gave a more readable
+        output for certain information when logging. THe json, or key[value] pairing just makes
+        sense for so many things.
+        """
+        json_string = json.dumps(data_dict, indent=4, default=str)
+        return json_string
+
     #
-    # Log Message Interfaces
+    # Log Message Interfaces:
     #
-    def error(self, message: str, timestamp: bool = False, dict_to_string: bool = False) -> None:
+
+    def error(self, 
+        message: str, 
+        timestamp: bool = False, 
+        dict_to_string: bool = False, 
+        heading: Optional[str] = None
+    ) -> None:
         
         if dict_to_string: 
             message = self.__format_dict_string(message)
+        
+        if heading:
+            Stream.Prefix.ERROR_PRE = f"{Stream.Prefix.ERROR_PRE}  {heading}\n"
 
         message = f"{Stream.Prefix.ERROR_PRE} {message}"
         self.__save_log_entry(
@@ -393,13 +422,13 @@ class APILogger():
         message: str, 
         timestamp: bool = False, 
         dict_to_string: bool = False, 
-        heading=None
+        heading: Optional[str] = None
     ) -> None:
         
         if dict_to_string: 
             message = self.__format_dict_string(message)
-        
-        if heading is not None:
+
+        if heading:
             Stream.Prefix.INFO_PRE = f"{Stream.Prefix.INFO_PRE}  {heading}\n"
 
         message = f"{Stream.Prefix.INFO_PRE} {message}"
@@ -410,10 +439,18 @@ class APILogger():
             self.info_filename
         )               
 
-    def warn(self, message: str, timestamp: bool = False, dict_to_string: bool = False) -> None:
+    def warn(self, 
+        message: str, 
+        timestamp: bool = False, 
+        dict_to_string: bool = False,
+        heading: Optional[str] = None
+    ) -> None:
         
         if dict_to_string: 
             message = self.__format_dict_string(message)
+
+        if heading:
+            Stream.Prefix.WARN_PRE = f"{Stream.Prefix.WARN_PRE}  {heading}\n"
 
         message = f"{Stream.Prefix.WARN_PRE} {message}"
         self.__save_log_entry(
@@ -423,10 +460,18 @@ class APILogger():
             self.warning_filename
         )       
 
-    def debug(self, message: str, timestamp: bool = False, dict_to_string: bool = False) -> None:
+    def debug(self, 
+        message: str, 
+        timestamp: bool = False, 
+        dict_to_string: bool = False,
+        heading: Optional[str] = None
+    ) -> None:
         
         if dict_to_string: 
             message = self.__format_dict_string(message)
+        
+        if heading:
+            Stream.Prefix.DEBUG_PRE = f"{Stream.Prefix.DEBUG_PRE}  {heading}\n"
 
         message = f"{Stream.Prefix.DEBUG_PRE} {message}"
         self.__save_log_entry(
@@ -440,13 +485,13 @@ class APILogger():
         message: str, 
         timestamp: bool = False, 
         dict_to_string: bool = False,
-        heading=None
+        heading: Optional[str] = None
     ) -> None:
         
         if dict_to_string: 
             message = self.__format_dict_string(message)
         
-        if heading is not None:
+        if heading:
             Stream.Prefix.LOGIN_PRE = f"{Stream.Prefix.LOGIN_PRE}{heading}\n"
 
         message = f"{Stream.Prefix.LOGIN_PRE} {message}"
@@ -457,6 +502,10 @@ class APILogger():
             self.login_filename
         )      
 
+#
+#  TODO: May 86 this method. I'm not so sure its necessary... and it could cause some unforseen issues
+#        IN a busy API. 
+#    
     def internal(self, stream2: int, message: str, timestamp: bool = False) -> None:
         # Brand the message
         message = f'{Stream.Prefix.INTERNAL_PRE}  {stream2} {message}'

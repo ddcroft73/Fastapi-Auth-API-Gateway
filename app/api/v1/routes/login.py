@@ -71,7 +71,7 @@ async def login_access_token(
         }
         
         logzz.login(
-            user_data, heading="New Login", dict_to_string=True
+            user_data, heading="New Login"
         ) 
      
 
